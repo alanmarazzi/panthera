@@ -24,18 +24,33 @@
    (py/call-attr builtins "slice" start stop incr)))
 
 (defn shape
+  "Returns the shape of the given object. If a
+  [[dataframe]] the first value is the count of rows
+  and the second one the count of columns. If a
+  [[series]] there are no columns.
+
+  ```
+  (shape df)
+  ;; [800 12]
+
+  (shape sr)
+  ;; 800
+  ```"
   [df-or-series]
-  (py/get-attr df-or-series "shape"))
+  (vec (py/get-attr df-or-series "shape")))
 
 (defn n-rows
+  "Returns the number of rows for the given object."
   [df-or-series]
   ((shape df-or-series) 0))
 
 (defn n-cols
+  "Returns the number of columns for the given object."
   [df]
   ((shape df) 1))
 
 (defn subset-cols
+  "Select columns by name"
   [df & colnames]
   (let [cols (if (= 1 (count colnames))
                (first colnames)
@@ -43,6 +58,7 @@
     (py/get-item df cols)))
 
 (defn subset-rows
+  "Select rows by index"
   [df & slicing]
   (py/get-item
    (py/get-attr df "iloc")
@@ -51,11 +67,6 @@
 (defn read-excel
   [& attrs]
   (apply #(py/call-attr-kw pandas "read_excel" %1 %2) attrs))
-
-(def prova (-> (read-excel ["benchmark.xlsx"] {"sheet_name" 1
-                                               "na_values"  ["n.d." "n.s."]})
-               (py/call-attr-kw "dropna" [] {"subset" ["Ragione sociale"]
-                                             "axis"   0})))
 
 (defn pandas->clj
   [df-or-series]
@@ -211,29 +222,4 @@
                       "index"   idx
                       "columns" colname})))
 
-(-> prova
-    (py/call-attr-kw "dropna" [] {"subset" ["Ragione sociale"]
-                                  "axis"   0})
-    (py/call-attr-kw "sort_values" [] {"by"        "Ricavi"
-                                       "ascending" false})
-    (py/call-attr "reset_index")
-    (py/call-attr-kw "drop" ["index"] {"axis" 1})
-    (py/call-attr "head")
-    (py/get-item "Ragione sociale"))
 
-(as-> prova p
-  (py/call-attr-kw p "dropna" [] {"subset" ["Ragione sociale"]
-                                  "axis"   0})
-  (py/call-attr-kw p "sort_values" [] {"by"        "Ricavi"
-                                       "ascending" false})
-  (py/call-attr p "reset_index")
-  (py/call-attr-kw p "drop" ["index"] {"axis" 1})
-  (py/call-attr-kw p "assign" []
-                   {"Delta" (let [d (py/get-item p "Debiti")
-                                  c (py/get-item p "Crediti")]
-                              (py/call-attr d "sub" c))}))
-
-(as-> prova p
-    (subset-cols p "Debiti")
-    (py/call-attr p "dropna")
-    (map #(> 20 %) p))
