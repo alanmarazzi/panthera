@@ -1,4 +1,4 @@
-(ns panthera.core
+(ns panthera.panthera
   (:refer-clojure
    :exclude [mod])
   (:require
