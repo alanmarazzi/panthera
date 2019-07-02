@@ -4,12 +4,9 @@
   (:require
    [libpython-clj.python :as py]
    [tech.parallel.utils :refer [export-symbols]]
-   [panthera.pandas.generics :as g]
-   [panthera.pandas.math :as m]
-   [panthera.pandas.utils :as u]))
+   [panthera.pandas.utils :as u :reload true]))
 
-(export-symbols
- panthera.pandas.generics
+(export-symbols panthera.pandas.generics
  series
  data-frame
  read-csv

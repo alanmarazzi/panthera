@@ -57,8 +57,8 @@
 
 (defn series?
   [obj]
-  (identical? :series (u/pytype obj)))
+  (identical? :series (pytype obj)))
 
 (defn data-frame?
   [obj]
-  (identical? :data-frame (u/pytype obj)))
+  (identical? :data-frame (pytype obj)))

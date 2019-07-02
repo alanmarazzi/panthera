@@ -1,7 +1,7 @@
 (ns panthera.pandas.reshape
   (:require
    [libpython-clj.python :as py]
-   [panthera.pandas.utils :as u :reload true]))
+   [panthera.pandas.utils :as u]))
 
 (defn crosstab
   [df-or-srs & [attrs]]

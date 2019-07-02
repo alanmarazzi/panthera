@@ -129,7 +129,7 @@
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "nsmallest" attrs))
 
-(def nunique
+(defn nunique
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "nunique" attrs))
 
