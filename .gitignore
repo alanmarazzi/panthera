@@ -11,3 +11,7 @@ pom.xml.asc
 .hgignore
 .hg/
 *.csv
+*.edn
+.idea
+.cpcache
+*.iml
