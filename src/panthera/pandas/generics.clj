@@ -159,4 +159,23 @@
 (defn value-counts
   [seq-or-srs & [attrs]]
   (if (u/series? seq-or-srs)
-    (u/simple-kw-call seq-or-srs "value_counts" attrs)))
+    (u/simple-kw-call seq-or-srs "value_counts" attrs)
+    (recur (series seq-or-srs))))
+
+(defn to-csv
+  [df-or-srs & [attrs]]
+  (u/simple-kw-call df-or-srs "to_csv" attrs))
+
+(defn reset-index
+  [df-or-srs & [attrs]]
+  (u/simple-kw-call df-or-srs "reset_index" attrs))
+
+(defn col-names
+  [df]
+  (py/get-attr df "columns"))
+
+(defn filter-rows
+  [df-or-srs bools-or-func]
+  (if (fn? fltr-or-func)
+    (py/get-item df-or-srs (fltr-or-func df-or-srs))
+    (py/get-item df-or-srs fltr-or-func)))

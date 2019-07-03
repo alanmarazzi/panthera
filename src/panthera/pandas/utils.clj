@@ -43,7 +43,7 @@
     (if (= tp "columns")
       (map #(zipmap
              (map memo-columns-converter ks) %) v)
-      (map #(hash-map (memo-columns-converter ks) % v)))))
+      (map #(hash-map (memo-columns-converter ks) %) v))))
 
 (defn simple-kw-call
   [df kw & [attrs]]

@@ -58,3 +58,8 @@
 (defn ewm
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "ewm" attrs))
+
+; remove :inplace as an attr
+(defn dropna
+  [df-or-srs & [attrs]]
+  (u/simple-kw-call df-or-srs "dropna" attrs))

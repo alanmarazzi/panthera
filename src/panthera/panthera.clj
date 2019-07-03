@@ -1,12 +1,13 @@
 (ns panthera.panthera
-    (:refer-clojure
-      :exclude [mod])
-    (:require
-      [libpython-clj.python :as py]
-      [tech.parallel.utils :refer [export-symbols]]
-      [panthera.pandas.generics]
-      [panthera.pandas.math]
-      [panthera.pandas.utils :as u]))
+  (:refer-clojure
+    :exclude [mod])
+  (:require
+    [tech.parallel.utils :refer [export-symbols]]
+    [panthera.pandas.generics]
+    [panthera.pandas.math]
+    [panthera.pandas.utils]
+    [panthera.pandas.conversion]
+    [panthera.pandas.reshape]))
 
 (export-symbols
   panthera.pandas.generics
@@ -38,7 +39,9 @@
   monotonic?
   increasing?
   decreasing?
-  value-counts)
+  value-counts
+  reset-index
+  col-names)
 
 (export-symbols
   panthera.pandas.math
@@ -57,6 +60,7 @@
   dot
   abs
   all?
+  any?
   autocorr
   between
   clip
@@ -69,6 +73,7 @@
   cumsum
   diff
   compound
+  describe
   kurtosis
   mean-abs-dev
   maximum
@@ -85,3 +90,36 @@
   std
   var)
 
+(export-symbols
+  panthera.pandas.utils
+  pytype
+  slice
+  ->clj
+  series?
+  data-frame?)
+
+(export-symbols
+  panthera.pandas.conversion
+  ->numeric
+  ->datetime
+  ->timedelta
+  date-range
+  timedelta-range
+  infer-time-freq
+  astype)
+
+(export-symbols
+  panthera.pandas.reshape
+  crosstab
+  pivot
+  cut
+  qcut
+  merge-ordered
+  merge-asof
+  concatenate
+  factorize
+  aggregate
+  remap
+  groupby
+  rolling
+  ewm)
