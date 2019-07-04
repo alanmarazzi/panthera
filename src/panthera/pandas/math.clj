@@ -1,6 +1,6 @@
 (ns panthera.pandas.math
   (:refer-clojure
-   :exclude [any?])
+   :exclude [any? mod])
   (:require
    [libpython-clj.python :as py]
    [panthera.pandas.utils :as u]))
