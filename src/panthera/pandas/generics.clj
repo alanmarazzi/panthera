@@ -88,10 +88,6 @@
   [df-or-srs]
   (py/get-attr df-or-srs "hasnans"))
 
-(defn series-name
-  [srs]
-  (py/get-attr srs "name"))
-
 (defn subset-rows
   "Select rows by index"
   [df & slicing]
@@ -164,9 +160,11 @@
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "reset_index" attrs))
 
-(defn col-names
-  [df]
-  (py/get-attr df "columns"))
+(defn names
+  [df-or-srs]
+  (if (u/series? df-or-srs)
+    (py/get-attr df-or-srs "name")
+    (py/get-attr df-or-srs "columns")))
 
 (defn filter-rows
   [df-or-srs bools-or-func]
