@@ -31,16 +31,12 @@
 ;;; wide_to_long not implemented, overlaps with melt
 
 (defn index
-  [df-or-srs & clj?]
-  (if clj?
-    (vec (py/get-attr df-or-srs "index"))
-    (py/get-attr df-or-srs "index")))
+  [df-or-srs]
+  (py/get-attr df-or-srs "index"))
 
 (defn values
-  [df-or-srs & clj?]
-  (if clj?
-    (vec (py/get-attr df-or-srs "values"))
-    (py/get-attr df-or-srs "values")))
+  [df-or-srs]
+  (py/get-attr df-or-srs "values"))
 
 (defn dtype
   [df-or-srs]
@@ -63,10 +59,8 @@
   (shape sr)
   ;; 800
   ```"
-  [df-or-srs & clj?]
-  (if clj?
-    (vec (py/get-attr df-or-srs "shape"))
-    (py/get-attr df-or-srs "shape")))
+  [df-or-srs]
+  (py/get-attr df-or-srs "shape"))
 
 (defn n-rows
   "Returns the number of rows for the given object."
