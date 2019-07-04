@@ -1,9 +1,9 @@
 (ns panthera.pandas.utils
   (:require
-   [libpython-clj.python :as py]
-   [camel-snake-kebab.core :as csk]
-   [camel-snake-kebab.extras :as cske]
-   [clojure.core.memoize :as m]))
+    [libpython-clj.python :as py]
+    [camel-snake-kebab.core :as csk]
+    [camel-snake-kebab.extras :as cske]
+    [clojure.core.memoize :as m]))
 
 (py/initialize!)
 
@@ -42,8 +42,9 @@
         ks (py/get-attr df-or-srs tp)]
     (if (= tp "columns")
       (map #(zipmap
-             (map memo-columns-converter ks) %) v)
-      (map #(hash-map (memo-columns-converter ks) %) v))))
+              (map memo-columns-converter ks) %) v)
+      (map #(hash-map
+              (memo-columns-converter (or ks :unnamed)) %) v))))
 
 (defn simple-kw-call
   [df kw & [attrs]]
