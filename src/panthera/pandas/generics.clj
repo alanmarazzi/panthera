@@ -176,6 +176,6 @@
 
 (defn filter-rows
   [df-or-srs bools-or-func]
-  (if (fn? fltr-or-func)
-    (py/get-item df-or-srs (fltr-or-func df-or-srs))
-    (py/get-item df-or-srs fltr-or-func)))
+  (if (fn? bools-or-func)
+    (py/get-item df-or-srs (bools-or-func df-or-srs))
+    (py/get-item df-or-srs bools-or-func)))
