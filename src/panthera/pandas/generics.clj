@@ -48,7 +48,7 @@
 
 (defn shape
   "Returns the shape of the given object. If a
-  [[dataframe]] the first value is the count of rows
+  [[data-frame]] the first value is the count of rows
   and the second one the count of columns. If a
   [[series]] there are no columns.
 

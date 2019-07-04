@@ -5,7 +5,7 @@
    [libpython-clj.python :as py]
    [panthera.pandas.utils :as u]))
 
-(defn base-math
+(defn- base-math
   [k]
   (fn [df-or-srs other & [attrs]]
     (u/kw-call df-or-srs
@@ -104,7 +104,7 @@
     (u/simple-kw-call df-or-srs "cov" (first args))
     (u/kw-call df-or-srs "cov" (first args) (second args))))
 
-(defn base-cumulative
+(defn- base-cumulative
   [k]
   (fn [df-or-srs & [attrs]]
     (u/simple-kw-call df-or-srs
@@ -138,7 +138,7 @@
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "describe" attrs))
 
-(defn other-ops
+(defn- other-ops
   [k]
   (fn [df-or-srs & [attrs]]
     (u/simple-kw-call df-or-srs

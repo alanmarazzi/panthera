@@ -1,6 +1,6 @@
 (ns panthera.panthera
   (:refer-clojure
-    :exclude [mod])
+    :exclude [mod any?])
   (:require
     [tech.parallel.utils :refer [export-symbols]]
     [panthera.pandas.generics]
@@ -46,50 +46,50 @@
 
 (export-symbols
   panthera.pandas.math
+  dot
+  ne
+  quantile
+  kurtosis
+  lt
+  std
+  le
   add
+  any?
+  diff
+  ge
+  cumprod
+  clip
+  cumsum
+  eq
+  compound
+  mean
+  all?
+  corr
   sub
-  mul
-  div
   mod
   pow
-  lt
-  gt
-  le
-  ge
-  eq
-  ne
-  dot
-  abs
-  all?
-  any?
-  autocorr
-  between
-  clip
-  corr
-  cnt
-  cov
-  cummax
-  cummin
-  cumprod
-  cumsum
-  diff
-  compound
-  describe
-  kurtosis
-  mean-abs-dev
-  maximum
-  minimum
-  mean
-  median
-  mode
-  pct-change
-  quantile
-  rank
-  round
-  sem
   skew
-  std
-  var)
+  rank
+  maximum
+  mode
+  between
+  pct-change
+  cummin
+  cnt
+  cummax
+  autocorr
+  cov
+  div
+  round
+  mul
+  sem
+  var
+  abs
+  median
+  gt
+  minimum
+  describe
+  mean-abs-dev)
 
 (export-symbols
   panthera.pandas.utils
@@ -101,26 +101,27 @@
 
 (export-symbols
   panthera.pandas.conversion
-  ->numeric
-  ->datetime
   ->timedelta
   date-range
+  astype
+  ->numeric
   timedelta-range
   infer-time-freq
-  astype)
+  ->datetime)
 
 (export-symbols
   panthera.pandas.reshape
-  crosstab
   pivot
+  aggregate
+  crosstab
   cut
+  rolling
+  concatenate
+  remap
+  factorize
   qcut
   merge-ordered
+  dropna
   merge-asof
-  concatenate
-  factorize
-  aggregate
-  remap
-  groupby
-  rolling
-  ewm)
+  ewm
+  groupby)
