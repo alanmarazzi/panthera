@@ -11,37 +11,38 @@
 
 (export-symbols
   panthera.pandas.generics
-  series
-  data-frame
-  read-csv
-  read-excel
-  one-hot
-  unique
-  index
-  values
-  dtype
-  ftype
-  shape
   n-rows
-  n-cols
-  nbytes
-  memory-usage
+  one-hot
   hasnans?
-  series-name
-  subset-rows
   cross-section
-  head
   subset-cols
-  nlargest
-  nsmallest
-  nunique
-  unique?
-  monotonic?
-  increasing?
-  decreasing?
+  names
+  read-csv
+  unique
+  filter-rows
+  dtype
   value-counts
+  index
+  series
+  read-excel
+  to-csv
+  data-frame
+  subset-rows
+  decreasing?
+  nsmallest
+  n-cols
+  nunique
+  head
+  increasing?
+  memory-usage
+  values
+  monotonic?
   reset-index
-  col-names)
+  nlargest
+  unique?
+  shape
+  nbytes
+  ftype)
 
 (export-symbols
   panthera.pandas.math

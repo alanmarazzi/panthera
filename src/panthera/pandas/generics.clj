@@ -123,7 +123,7 @@
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "nunique" attrs))
 
-(defn preds
+(defn- preds
   [k]
   (fn [seq-or-srs]
     (let [ks {:unique?     #(py/get-attr % "is_unique")
@@ -150,7 +150,7 @@
   [seq-or-srs & [attrs]]
   (if (u/series? seq-or-srs)
     (u/simple-kw-call seq-or-srs "value_counts" attrs)
-    (recur (series seq-or-srs))))
+    (recur (series seq-or-srs) attrs)))
 
 (defn to-csv
   [df-or-srs & [attrs]]
