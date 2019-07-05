@@ -45,12 +45,12 @@
 
 (def consts (attrs #{:float} numpy))
 
-(def funcs (funcs #{:builtin-function-or-method
-                    :function
-                    :ufunc} numpy))
+(def functions (funcs #{:builtin-function-or-method
+                        :function
+                        :ufunc} numpy))
 
 (def np-merged
-  (merge consts funcs))
+  (merge consts functions))
 
 (defn np-caller
   [k]
