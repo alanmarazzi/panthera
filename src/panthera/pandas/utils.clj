@@ -32,9 +32,23 @@
              %
              (csk/->kebab-case-keyword %)) {} :fifo/threshold 512))
 
+(defn vec->pylist
+  [v]
+  (py/->py-list v))
+
+(defn vals->pylist
+  [obj]
+  (if (vector? obj)
+    (py/->py-list obj)
+    obj))
+
 (defn keys->pyargs
   [m]
-  (cske/transform-keys memo-key-converter m))
+  (let [nm (reduce-kv 
+            (fn [m k v] 
+              (assoc m k (vals->pylist v))) 
+            {} m)]
+    (cske/transform-keys memo-key-converter nm)))
 
 (defn ->clj
   [df-or-srs]
