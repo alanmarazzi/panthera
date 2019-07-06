@@ -85,8 +85,8 @@
 (defn hasnans?
   "This is a cached value, but by never mutating the underlying
   data we get very nice speed improvements"
-  [df-or-srs]
-  (py/get-attr df-or-srs "hasnans"))
+  [srs]
+  (py/get-attr srs "hasnans"))
 
 (defn subset-rows
   "Select rows by index"
