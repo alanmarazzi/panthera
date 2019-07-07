@@ -63,3 +63,12 @@
 (defn dropna
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "dropna" attrs))
+
+(defn melt
+  [df & [attrs]]
+  (u/simple-kw-call df "melt" attrs))
+
+(defn assign
+  [df-or-srs cols]
+  (py/call-attr df-or-srs "assign"
+                (u/keys->pyargs cols)))

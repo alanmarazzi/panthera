@@ -171,3 +171,19 @@
   (if (fn? bools-or-func)
     (py/get-item df-or-srs (bools-or-func df-or-srs))
     (py/get-item df-or-srs bools-or-func)))
+
+(defn tail
+  [df-or-series & [n]]
+  (py/call-attr df-or-series "tail" (or n 5)))
+
+(defn fill-na
+  [df-or-srs value & [attrs]]
+  (u/kw-call df-or-srs "fillna" value attrs))
+
+(defn not-na?
+  [df-or-srs]
+  (py/call-attr df-or-srs "notna"))
+
+(defn all?
+  [df-or-srs]
+  (py/call-attr df-or-srs "all"))

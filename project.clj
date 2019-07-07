@@ -1,4 +1,4 @@
-(defproject panthera "0.1-alpha.1"
+(defproject panthera "0.1-alpha.2"
   :description "Data Frames in Clojure (with Pandas)"
   :url "https://github.com/alanmarazzi/panthera"
   :scm {:name "git" :url "https://github.com/alanmarazzi/panthera"}

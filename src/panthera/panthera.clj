@@ -10,39 +10,43 @@
     [panthera.pandas.reshape]))
 
 (export-symbols
-  panthera.pandas.generics
-  n-rows
-  one-hot
-  hasnans?
-  cross-section
-  subset-cols
-  names
-  read-csv
-  unique
-  filter-rows
-  dtype
-  value-counts
-  index
-  series
-  read-excel
-  to-csv
-  data-frame
-  subset-rows
-  decreasing?
-  nsmallest
-  n-cols
-  nunique
-  head
-  increasing?
-  memory-usage
-  values
-  monotonic?
-  reset-index
-  nlargest
-  unique?
-  shape
-  nbytes
-  ftype)
+ panthera.pandas.generics
+ n-rows
+ one-hot
+ hasnans?
+ cross-section
+ subset-cols
+ names
+ read-csv
+ unique
+ filter-rows
+ dtype
+ value-counts
+ index
+ series
+ read-excel
+ to-csv
+ data-frame
+ subset-rows
+ decreasing?
+ nsmallest
+ n-cols
+ nunique
+ head
+ increasing?
+ memory-usage
+ values
+ monotonic?
+ reset-index
+ nlargest
+ unique?
+ shape
+ nbytes
+ ftype
+ tail
+ fill-na
+ not-na?
+ all?)
 
 (export-symbols
   panthera.pandas.math
@@ -110,18 +114,20 @@
   ->datetime)
 
 (export-symbols
-  panthera.pandas.reshape
-  pivot
-  aggregate
-  crosstab
-  cut
-  rolling
-  concatenate
-  remap
-  factorize
-  qcut
-  merge-ordered
-  dropna
-  merge-asof
-  ewm
-  groupby)
+ panthera.pandas.reshape
+ pivot
+ aggregate
+ crosstab
+ cut
+ rolling
+ concatenate
+ remap
+ factorize
+ qcut
+ merge-ordered
+ dropna
+ merge-asof
+ ewm
+ groupby
+ melt
+ assign)
