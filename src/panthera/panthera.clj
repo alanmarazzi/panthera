@@ -36,7 +36,6 @@
   increasing?
   memory-usage
   values
-  monotonic?
   reset-index
   n-largest
   unique?

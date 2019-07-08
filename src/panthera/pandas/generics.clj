@@ -132,7 +132,6 @@
   [k]
   (fn [seq-or-srs]
     (let [ks {:unique?     #(py/get-attr % "is_unique")
-              :monotonic?  #(py/get-attr % "is_monotonic")
               :increasing? #(py/get-attr % "is_monotonic_increasing")
               :decreasing? #(py/get-attr % "is_monotonic_decreasing")}]
       (if (u/series? seq-or-srs)
@@ -141,9 +140,6 @@
 
 (def unique?
   (preds :unique?))
-
-(def monotonic?
-  (preds :monotonic?))
 
 (def increasing?
   (preds :increasing?))
