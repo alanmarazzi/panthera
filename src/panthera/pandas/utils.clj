@@ -44,23 +44,32 @@
 
 (defn keys->pyargs
   [m]
-  (let [nm (reduce-kv 
-            (fn [m k v] 
-              (assoc m k (vals->pylist v))) 
-            {} m)]
+  (let [nm (reduce-kv
+             (fn [m k v]
+               (assoc m k (vals->pylist v)))
+             {} m)]
     (cske/transform-keys memo-key-converter nm)))
+
+(defn series?
+  [obj]
+  (identical? :series (pytype obj)))
+
+(defn data-frame?
+  [obj]
+  (identical? :data-frame (pytype obj)))
 
 (defn ->clj
   [df-or-srs]
-  (let [v  (py/get-attr df-or-srs "values")
-        tp ({:data-frame "columns"
-             :series     "name"} (pytype df-or-srs))
-        ks (py/get-attr df-or-srs tp)]
-    (if (= tp "columns")
-      (map #(zipmap
-              (map memo-columns-converter (vec ks)) %) v)
-      (map #(hash-map
-              (memo-columns-converter (or ks :unnamed)) %) v))))
+  (if (series? df-or-srs)
+    (let [nm (or (memo-columns-converter
+                   (py/get-attr df-or-srs "name"))
+                 :unnamed)]
+      (into [] (map #(assoc {} nm %))
+            (vec df-or-srs)))
+    (let [ks (map memo-columns-converter
+                  (py/get-attr df-or-srs "columns"))]
+      (into [] (map #(zipmap ks %))
+               (py/get-attr df-or-srs "values")))))
 
 (defn simple-kw-call
   [df kw & [attrs]]
@@ -71,11 +80,3 @@
   [df kw pos & [attrs]]
   (py/call-attr-kw df kw [pos]
                    (keys->pyargs attrs)))
-
-(defn series?
-  [obj]
-  (identical? :series (pytype obj)))
-
-(defn data-frame?
-  [obj]
-  (identical? :data-frame (pytype obj)))
