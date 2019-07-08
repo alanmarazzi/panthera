@@ -1,9 +1,14 @@
 (ns panthera.pandas.generics
+  "Here there is a collection of generic functions and
+  methods that help managing the underlying data
+  structures such as series and data-frame."
   (:require
    [libpython-clj.python :as py]
    [panthera.pandas.utils :as u]))
 
 (defn series
+  "Creates a panthera series, the underlying backend is a
+  pandas Series."
   [data & [attrs]]
   (u/kw-call u/pd "Series" data attrs))
 
@@ -111,15 +116,15 @@
                (apply py/->py-list [colnames]))]
     (py/get-item df cols)))
 
-(defn nlargest
+(defn n-largest
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "nlargest" attrs))
 
-(defn nsmallest
+(defn n-smallest
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "nsmallest" attrs))
 
-(defn nunique
+(defn n-unique
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "nunique" attrs))
 

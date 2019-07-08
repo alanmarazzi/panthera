@@ -164,12 +164,32 @@
        (repeat 4 [{:a 1 :b 2}
                   {:a 2 :b 3}]))))
 
-(deftest nlargest
+(deftest n-largest
   (are [m o]
        (= (vec
-           (g/nlargest
+           (g/n-largest
             (g/series (range 20)) m))
           o)
     {:n 5} (range 19 14 -1)
     {:n 3} [19 18 17]
     {:n 8} (range 19 11 -1)))
+
+(deftest n-smallest
+  (are [m o]
+       (= (vec
+           (g/n-smallest
+            (g/series (range 20)) m))
+          o)
+    {:n 5} (range 5)
+    {:n 3} (range 3)
+    {:n 8} (range 8)))
+
+(deftest n-unique
+  (are [i o]
+       (= (vec
+           (g/n-unique
+            (g/series i)))
+          o)
+    (range 10) 10
+    [1 1 2] 2
+    [11 nil 3] 3))
