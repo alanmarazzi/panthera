@@ -192,3 +192,47 @@
 (defn all?
   [df-or-srs]
   (py/call-attr df-or-srs "all"))
+
+(defn select-rows
+  "This is used for filtering by [[index]].
+  
+  Arguments:
+
+  - `df-or-srs`: a [[data-frame]] or a [[series]]
+  - `idx`: a vector, sequence, [[series]], [[slice]] 
+  or array of the needed indices
+  - `how`: method for subsetting. `:iloc` is
+  purely positional, `:loc` is based on labels
+  or booleans. Default is `:iloc`
+
+  Examples:
+
+  ```
+  (select-rows df [1 3])
+  ; returns the second and fourth row
+
+  (select-rows srs [3 7])
+  ; returns the fourth and eight row
+  
+  (select-rows df [\"a\" \"b \"] :loc)
+  ; returns the rows labeled a and b
+
+  (select-rows df (slice 5))
+  ; returns the first 5 rows
+
+  (select-rows df (slice \"a \" \"f \"))
+  ;returns all rows which labels are between a and f"
+  [df-or-srs idx & [how]]
+  (case how
+    :iloc (-> (py/get-attr df-or-srs "iloc")
+              (py/get-item (if (vector? idx)
+                             (py/->py-list idx)
+                             idx)))
+    :loc (-> (py/get-attr df-or-srs "loc")
+             (py/get-item (if (vector? idx)
+                            (py/->py-list idx)
+                            idx)))
+    (-> (py/get-attr df-or-srs "iloc")
+        (py/get-item (if (vector? idx)
+                       (py/->py-list idx)
+                       idx)))))
