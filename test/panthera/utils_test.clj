@@ -17,8 +17,7 @@
     :tuple (py/->py-tuple [[1 2] [3 4]])
     :dict (py/->py-dict {})
     :dict (py/->py-dict {:a 1 :b "2" :c [1 2 3]})
-    :dict (py/->py-dict {"a" 1})
-    :dict (py/->py-dict {{:a 1} {:b 3}})))
+    :dict (py/->py-dict {"a" 1})))
 
 (deftest slice
   (are [d]
@@ -30,7 +29,9 @@
     [1 2 3]
     [3 7 2])
   (are [s res]
-    (= (py/->jvm (py/get-item (py/->py-list (range 4)) s) res))
+    (= (py/->jvm 
+        (py/get-item 
+         (py/->py-list (range 4)) s)) res)
     (u/slice) (vec (range 4))
     (u/slice 2) [0 1]
     (u/slice 1 3) [1 2]

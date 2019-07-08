@@ -61,9 +61,9 @@
 (defn ->clj
   [df-or-srs]
   (if (series? df-or-srs)
-    (let [nm (or (memo-columns-converter
-                   (py/get-attr df-or-srs "name"))
-                 :unnamed)]
+    (let [nm (memo-columns-converter
+              (or (py/get-attr df-or-srs "name")
+                  :unnamed))]
       (into [] (map #(assoc {} nm %))
             (vec df-or-srs)))
     (let [ks (map memo-columns-converter
