@@ -7,23 +7,44 @@
 
 (defn- base-math
   [k]
-  (fn [df-or-srs other & [attrs]]
-    (u/kw-call df-or-srs
-               ({:+    "add"
-                 :-    "sub"
-                 :*    "mul"
-                 :div  "div"
-                 :mode "mod"
-                 :**   "pow"
-                 :<    "lt"
-                 :>    "gt"
-                 :<=   "le"
-                 :>=   "ge"
-                 :!=   "ne"
-                 :=    "eq"
-                 :dot  "dot"} k)
-               other
-               attrs)))
+  (fn [& args]
+    (reduce #(py/call-attr %1
+                           ({:+    "__add__"
+                             :-    "__sub__"
+                             :*    "__mul__"
+                             :div  "__div__"
+                             :fld  "__floordiv__"
+                             :mod  "__mod__"
+                             :**   "__pow__"
+                             :<    "__lt__"
+                             :>    "__gt__"
+                             :<=   "__le__"
+                             :>=   "__ge__"
+                             :!=   "__ne__"
+                             :=    "__eq__"
+                             :dot  "__matmul__"} k)
+                           %2) args)))
+
+(defn ops
+  [df-or-srs other op & [attrs]]
+  (u/kw-call
+   df-or-srs
+   ({:+    "__add__"
+     :-    "__sub__"
+     :*    "__mul__"
+     :div  "__div__"
+     :fld  "__floordiv__"
+     :mod  "__mod__"
+     :**   "__pow__"
+     :<    "__lt__"
+     :>    "__gt__"
+     :<=   "__le__"
+     :>=   "__ge__"
+     :!=   "__ne__"
+     :=    "__eq__"
+     :dot  "__matmul__"} op)
+   other
+   attrs))
 
 (def add
   (base-math :+))
