@@ -29,16 +29,16 @@
  data-frame
  subset-rows
  decreasing?
- nsmallest
+ n-smallest
  n-cols
- nunique
+ n-unique
  head
  increasing?
  memory-usage
  values
  monotonic?
  reset-index
- nlargest
+ n-largest
  unique?
  shape
  nbytes
