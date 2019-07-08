@@ -164,6 +164,20 @@
        (repeat 4 [{:a 1 :b 2}
                   {:a 2 :b 3}]))))
 
+(deftest subset-cols
+  (are [i cols o]
+       (= (u/->clj
+           (apply
+            g/subset-cols
+            (g/data-frame i)
+            cols))
+          o)
+    [] nil []
+    [{:a 1}] [:a] [{:a 1}]
+    [{:a 1 :b 2 :c 3}] [:a :c] [{:a 1 :c 3}]
+    (repeat 5 {:a 1 :b 2}) [:b] (repeat 5 {:b 2})
+    [{:wEiR__.D 1 :b 2}] [:wEiR__.D] [{:w-ei-r-.-d 1}]))
+
 (deftest n-largest
   (are [m o]
        (= (vec
@@ -186,10 +200,48 @@
 
 (deftest n-unique
   (are [i o]
-       (= (vec
-           (g/n-unique
-            (g/series i)))
+       (= (g/n-unique
+           (g/series i))
           o)
     (range 10) 10
     [1 1 2] 2
-    [11 nil 3] 3))
+    [11 nil 3] 2))
+
+(deftest unique?
+  (are [i o]
+       (= (g/unique? i) o)
+    [] true
+    [1 2 3] true
+    [1 1] false
+    [-1 1] true
+    [1 nil] true
+    ["a" "b"] true
+    (g/series [1 1]) false))
+
+(deftest increasing?
+  (are [i o]
+       (= (g/increasing? i) o)
+    [] true
+    [1 5 9] true
+    [1 nil 3] false
+    [1 1 1 1] true
+    [3 2 1] false))
+
+(deftest decreasing?
+  (are [i o]
+       (= (g/decreasing? i) o)
+    [] true
+    [9 7 1] true
+    [3 nil 1] false
+    [3 3 3] true
+    [1 2 3] false))
+
+(deftest value-counts
+  (are [i m o]
+       (= (g/value-counts i (merge {:clj true} m)) o)
+    [] {} {}
+    [1 1 2] {} {1 2 2 1}
+    [:a :a :b :c] {} {:a 2 :b 1 :c 1}
+    (repeat 50 :a) {} {:a 50}
+    [:a :a :b :c] {:normalize true} {:a 0.5 :b 0.25 :c 0.25}
+    (range 20) {:bins 4} {:a 0.5 :b 0.25 :c 0.25}))

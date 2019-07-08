@@ -28,9 +28,10 @@
   (m/fifo csk/->snake_case_string {} :fifo/threshold 512))
 
 (def memo-columns-converter
-  (m/fifo #(if (number? %)
-             %
-             (csk/->kebab-case-keyword %)) {} :fifo/threshold 512))
+  (m/fifo 
+   #(if (number? %)
+      %
+      (csk/->kebab-case-keyword %)) {} :fifo/threshold 512))
 
 (defn vec->pylist
   [v]

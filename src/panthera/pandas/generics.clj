@@ -150,8 +150,16 @@
 (defn value-counts
   [seq-or-srs & [attrs]]
   (if (u/series? seq-or-srs)
-    (u/simple-kw-call seq-or-srs "value_counts" attrs)
-    (recur (series seq-or-srs) attrs)))
+    (let [v (u/simple-kw-call
+             seq-or-srs
+             "value_counts"
+             (dissoc attrs :clj))]
+      (if (:clj attrs)
+        (zipmap 
+         (map u/memo-columns-converter (vec (index v))) 
+         (vec v))
+        v))
+    (recur (series seq-or-srs) [attrs])))
 
 (defn to-csv
   [df-or-srs & [attrs]]
