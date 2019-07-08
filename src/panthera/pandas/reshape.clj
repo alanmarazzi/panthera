@@ -1,7 +1,7 @@
 (ns panthera.pandas.reshape
   (:require
-   [libpython-clj.python :as py]
-   [panthera.pandas.utils :as u]))
+    [libpython-clj.python :as py]
+    [panthera.pandas.utils :as u]))
 
 (defn crosstab
   [df-or-srs & [attrs]]
@@ -13,7 +13,7 @@
 
 (defn cut
   [data-or-srs bins & [attrs]]
-  (py/call-attr-kw u/pd "cut" [data-or-srs bins] 
+  (py/call-attr-kw u/pd "cut" [data-or-srs bins]
                    (u/keys->pyargs attrs)))
 
 (defn qcut
@@ -70,5 +70,5 @@
 
 (defn assign
   [df-or-srs cols]
-  (py/call-attr df-or-srs "assign"
-                (u/keys->pyargs cols)))
+  (u/simple-kw-call df-or-srs "assign"
+                  (u/keys->pyargs cols)))
