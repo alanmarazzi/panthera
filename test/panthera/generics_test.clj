@@ -3,7 +3,8 @@
     [clojure.test :refer :all]
     [libpython-clj.python :as py]
     [panthera.pandas.generics :as g]
-    [panthera.pandas.utils :as u]))
+    [panthera.pandas.utils :as u]
+    [panthera.pandas.math :as m]))
 
 (deftest series
   (are [i m]
@@ -244,4 +245,53 @@
     [:a :a :b :c] {} {:a 2 :b 1 :c 1}
     (repeat 50 :a) {} {:a 50}
     [:a :a :b :c] {:normalize true} {:a 0.5 :b 0.25 :c 0.25}
-    (range 20) {:bins 4} {:a 0.5 :b 0.25 :c 0.25}))
+    ;(range 20) {:bins 4} {:a 0.5 :b 0.25 :c 0.25} Intervals are not handled
+    ))
+
+(deftest reset-index
+  (are [i m o]
+      (= (u/->clj (g/reset-index (g/series i) m)) o)
+    (range 3) {} [{:index 0 0 0}
+                  {:index 1 0 1}
+                  {:index 2 0 2}]
+    (range 3) {:drop true} [{:unnamed 0}
+                            {:unnamed 1}
+                            {:unnamed 2}]
+    (range 3) {:name "col"} [{:index 0 :col 0}
+                             {:index 1 :col 1}
+                             {:index 2 :col 2}]))
+
+(deftest names
+  (are [i o]
+      (= (g/names i) o)
+    (g/series [1 2]) nil
+    (g/series [1 2] {:name "name"}) "name"
+    (g/series [1 2] {:name :my-name} "my-name"))
+  (are [i o]
+      (= (vec (g/names (g/data-frame i))) o)
+    [{:a 1 :b 2}] ["a" "b"]
+    [{"a name" 1 :c 2}] ["a name" "c"]
+    [{123 1 1/5 3}] [123 0.2]))
+
+(deftest filter-rows
+  (are [i b o]
+      (= (u/->clj
+          (g/filter-rows i b)) o)
+    (g/series (range 10)) #(m/gt % 5) [{:unnamed 6}
+                                       {:unnamed 7}
+                                       {:unnamed 8}
+                                       {:unnamed 9}]
+    (g/series (range 4)) [false true false true] [{:unnamed 1}
+                                                  {:unnamed 3}]
+
+    (g/data-frame [{:a 1 :b 2}
+                   {:a 3 :b 4}])
+    #(-> (g/subset-cols % :a)
+         (m/lt 3))
+    [{:a 1 :b 2}]
+
+    (g/data-frame [{:a 1 :b 2}
+                   {:a 3 :b 4}
+                   {:a 4 :b 5}])
+    [true false false]
+    [{:a 1 :b 2}]))

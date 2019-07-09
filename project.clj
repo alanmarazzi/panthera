@@ -6,4 +6,6 @@
             :url  "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[cnuernber/libpython-clj "0.12"]
                  [org.clojure/core.memoize "0.7.2"]]
-  :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.1"]]}})
+  :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.1"]]
+                   :plugins [[refactor-nrepl "2.4.0"]
+                             [cider/cider-nrepl "0.18.0"]]}})
