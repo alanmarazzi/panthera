@@ -199,14 +199,14 @@
   (py/call-attr df-or-srs "all"))
 
 (defn select-rows
-  "This is used for filtering by [[index]].
+  "This is used for filtering by index.
   
-  Arguments:
+  **Arguments**:
 
-  - `df-or-srs`: a [[data-frame]] or a [[series]]
-  - `idx`: a vector, sequence, [[series]], [[slice]] 
+  `df-or-srs`: a data-frame or a series
+  `idx`: a vector, sequence, series, slice 
   or array of the needed indices
-  - `how`: method for subsetting. `:iloc` is
+  `how`: method for subsetting. `:iloc` is
   purely positional, `:loc` is based on labels
   or booleans. Default is `:iloc`
 
@@ -235,3 +235,63 @@
               (py/get-item (u/vals->pylist idx)))
     (-> (py/get-attr df-or-srs "iloc")
         (py/get-item (u/vals->pylist idx)))))
+
+(defn set-index
+  "Set the index of the given data-frame,
+  this can be either a column, multiple columns or
+  a series-like collection.
+
+  **Arguments**:
+
+  `df`: a data-frame
+
+  `cols`: can be the name of a column (string or value),
+  a collection of column names or a collection of values
+
+  **Attrs**:
+
+  `:drop` -> bool, default true: delete columns set as index.
+  **N.B.**: if you need to convert data to Clojure it's
+  easier to set this to false and not drop columns
+
+  `:append` -> bool, default true: add the new index to the
+  current one
+
+  `:verify-integrity` -> bool, default false: check the new
+  index for duplicates
+
+  Examples:
+
+  ```
+  (set-index my-df \"mycol\")
+  ; this drops the current index and replaces it with mycol
+
+  (set-index my-df \"mycol\" {:drop false})
+  ; this sets mycol as the new index and keeps mycol in the data-frame
+
+  (set-index my-df [12 24])
+
+  (set-index my-df (series [:a :b]))
+  ```"
+  [df cols & [attrs]]
+  (u/kw-call df "set_index" cols attrs))
+
+(defn swap-level
+  "Switch levels `i` and `j` of a multi index.
+
+  Arguments:
+
+  `df-or-srs`: data-frame or series
+  `i`, `j` -> int, str: the levels that you want to swap
+
+  Examples:
+
+  ```
+  (swap-level my-df 0 1)
+
+  (swap-level my-srs :a :b)
+
+  (swap-level my-df 0 :b)
+  ```"
+  [df-or-srs i j]
+  (u/simple-kw-call df-or-srs "swaplevel" [] {"i" i "j" j}))
