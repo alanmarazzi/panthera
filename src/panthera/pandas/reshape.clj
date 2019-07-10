@@ -71,4 +71,8 @@
 (defn assign
   [df-or-srs cols]
   (u/simple-kw-call df-or-srs "assign"
-                  (u/keys->pyargs cols)))
+                    (u/keys->pyargs cols)))
+
+(defn unstack
+  [df-or-srs & [attrs]]
+  (u/simple-kw-call df-or-srs "unstack" attrs))
