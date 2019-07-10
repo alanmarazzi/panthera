@@ -37,11 +37,18 @@
   [v]
   (py/->py-list v))
 
+(defn nested-vector?
+  [v]
+  (some vector? v))
+
 (defn vals->pylist
   [obj]
-  (if (vector? obj)
-    (py/->py-list obj)
-    obj))
+  (cond
+    (not (coll? obj))    obj
+    (map? obj)           obj
+    (nested-vector? obj) (to-array-2d obj)
+    (vector? obj)        (py/->py-list obj)
+    :else                obj))
 
 (defn keys->pyargs
   [m]
@@ -79,5 +86,5 @@
 
 (defn kw-call
   [df kw pos & [attrs]]
-  (py/call-attr-kw df kw [pos]
+  (py/call-attr-kw df kw [(vals->pylist pos)]
                    (keys->pyargs attrs)))
