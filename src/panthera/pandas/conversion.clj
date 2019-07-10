@@ -5,15 +5,15 @@
 
 (defn ->numeric
   [seq-or-srs & [attrs]]
-  (u/simple-kw-call u/pd "to_numeric" seq-or-srs attrs))
+  (u/kw-call u/pd "to_numeric" seq-or-srs attrs))
 
 (defn ->datetime
   [seq-or-srs & [attrs]]
-  (u/simple-kw-call u/pd "to_datetime" seq-or-srs attrs))
+  (u/kw-call u/pd "to_datetime" seq-or-srs attrs))
 
 (defn ->timedelta
   [seq-or-srs & [attrs]]
-  (u/simple-kw-call u/pd "to_timedelta" seq-or-srs attrs))
+  (u/kw-call u/pd "to_timedelta" seq-or-srs attrs))
 
 ;; bdate_range and period_range are just date_range with freq defaults
 (defn date-range
@@ -23,6 +23,10 @@
 (defn timedelta-range
   [& [attrs]]
   (u/simple-kw-call u/pd "timedelta_range" attrs))
+
+(defn interval-range
+  [& [attrs]]
+  (u/simple-kw-call u/pd "interval_range" attrs))
 
 (defn infer-time-freq
   [seq-or-srs & [warn]]
