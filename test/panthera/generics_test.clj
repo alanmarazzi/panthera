@@ -266,12 +266,12 @@
       (= (g/names i) o)
     (g/series [1 2]) nil
     (g/series [1 2] {:name "name"}) "name"
-    (g/series [1 2] {:name :my-name} "my-name"))
+    (g/series [1 2] {:name :my-name}) "my-name")
   (are [i o]
       (= (vec (g/names (g/data-frame i))) o)
     [{:a 1 :b 2}] ["a" "b"]
     [{"a name" 1 :c 2}] ["a name" "c"]
-    [{123 1 1/5 3}] [123 0.2]))
+    [{123 1 1/5 3}] [0.2 123.0]))
 
 (deftest filter-rows
   (are [i b o]
@@ -295,3 +295,68 @@
                    {:a 4 :b 5}])
     [true false false]
     [{:a 1 :b 2}]))
+
+(deftest tail
+  (are [i n o]
+      (= (u/->clj
+          (g/tail i n))
+         o)
+    (g/series (range 20)) nil [{:unnamed 15}
+                               {:unnamed 16}
+                               {:unnamed 17}
+                               {:unnamed 18}
+                               {:unnamed 19}]
+    (g/series (range 20)) 2 [{:unnamed 18} {:unnamed 19}]
+    (g/data-frame (repeat 10 {:a 1 :b 2})) nil (repeat 5 {:a 1 :b 2})
+    (g/data-frame (repeat 10 {:a 1 :b 2})) 2 (repeat 2 {:a 1 :b 2})))
+
+(deftest fill-na
+  (are [v m o]
+      (= (vec
+          (g/fill-na (g/series [1 nil 2 nil]) v m)) o)
+    3 {} [1.0 3.0 2.0 3.0]
+    "a" {} [1.0 "a" 2.0 "a"]
+    nil {:method :ffill} [1.0 1.0 2.0 2.0]))
+
+(deftest select-rows
+  (are [i id l h o]
+      (= (u/->clj
+          (g/select-rows
+           (g/data-frame i (or {:index l} {}))
+           id h))
+         o)
+    (to-array-2d (partition 2 (range 20)))
+    []
+    nil
+    nil
+    []
+
+    (to-array-2d (partition 2 (range 20)))
+    [0 3]
+    nil
+    nil
+    [{0 0 1 1} {0 6 1 7}]
+
+    (to-array-2d (partition 2 (range 10)))
+    [0 3]
+    [:a :b :c :d :e]
+    nil
+    [{0 0 1 1} {0 6 1 7}]
+
+    (to-array-2d (partition 2 (range 10)))
+    [0 3]
+    nil
+    :loc
+    [{0 0 1 1} {0 6 1 7}]
+
+    (to-array-2d (partition 2 (range 10)))
+    [:a :d]
+    [:a :b :c :d :e]
+    :loc
+    [{0 0 1 1} {0 6 1 7}]
+
+    (to-array-2d (partition 2 (range 10)))
+    (u/slice 3)
+    nil
+    nil
+    [{0 0 1 1} {0 2 1 3} {0 4 1 5}]))
