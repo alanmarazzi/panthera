@@ -226,7 +226,11 @@
   ; returns the first 5 rows
 
   (select-rows df (slice \"a \" \"f \"))
-  ;returns all rows which labels are between a and f"
+  ;returns all rows which labels are between a and f
+  
+  (select-rows df [(slice 1 3) (slice)] :loc)
+  ; returns rows between 1 and 3 and all columns
+  ```"
   [df-or-srs idx & [how]]
   (case how
     :iloc (-> (py/get-attr df-or-srs "iloc")

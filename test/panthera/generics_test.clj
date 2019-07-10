@@ -320,11 +320,11 @@
 
 (deftest select-rows
   (are [i id l h o]
-      (= (u/->clj
-          (g/select-rows
-           (g/data-frame i (or {:index l} {}))
-           id h))
-         o)
+       (= (u/->clj
+           (g/select-rows
+            (g/data-frame i (or {:index l} {}))
+            id h))
+          o)
     (to-array-2d (partition 2 (range 20)))
     []
     nil
@@ -359,7 +359,13 @@
     (u/slice 3)
     nil
     nil
-    [{0 0 1 1} {0 2 1 3} {0 4 1 5}]))
+    [{0 0 1 1} {0 2 1 3} {0 4 1 5}]
+    
+    (to-array-2d (partition 4 (range 20)))
+    [(u/slice 3) (u/slice 2)]
+    nil
+    :loc
+    [{0 0 1 1} {0 4 1 5} {0 8 1 9}]))
 
 (deftest set-index
   (are [idx m oid ov]
