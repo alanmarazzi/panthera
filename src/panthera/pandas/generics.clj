@@ -1,5 +1,5 @@
 (ns panthera.pandas.generics
-  "Here there is a collection of generic functions and
+  "Here is a collection of generic functions and
   methods that help managing the underlying data
   structures such as series and data-frame."
   (:require
@@ -189,6 +189,7 @@
   [df-or-srs value & [attrs]]
   (u/kw-call df-or-srs "fillna" value attrs))
 
+; Watch out!!!!! Use these 2 only confined in Python land
 (defn not-na?
   [df-or-srs]
   (py/call-attr df-or-srs "notna"))
@@ -229,14 +230,8 @@
   [df-or-srs idx & [how]]
   (case how
     :iloc (-> (py/get-attr df-or-srs "iloc")
-              (py/get-item (if (vector? idx)
-                             (py/->py-list idx)
-                             idx)))
-    :loc (-> (py/get-attr df-or-srs "loc")
-             (py/get-item (if (vector? idx)
-                            (py/->py-list idx)
-                            idx)))
+              (py/get-item (u/vals->pylist idx)))
+    :loc  (-> (py/get-attr df-or-srs "loc")
+              (py/get-item (u/vals->pylist idx)))
     (-> (py/get-attr df-or-srs "iloc")
-        (py/get-item (if (vector? idx)
-                       (py/->py-list idx)
-                       idx)))))
+        (py/get-item (u/vals->pylist idx)))))
