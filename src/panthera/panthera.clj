@@ -46,7 +46,9 @@
   fill-na
   not-na?
   all?
-  select-rows)
+  select-rows
+  set-index
+  swap-level)
 
 (export-symbols
   panthera.pandas.math
@@ -111,7 +113,8 @@
   ->numeric
   timedelta-range
   infer-time-freq
-  ->datetime)
+  ->datetime
+  interval-range)
 
 (export-symbols
   panthera.pandas.reshape
@@ -130,4 +133,5 @@
   ewm
   groupby
   melt
-  assign)
+  assign
+  unstack)
