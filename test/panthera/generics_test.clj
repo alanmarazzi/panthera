@@ -3,7 +3,7 @@
     [clojure.test :refer :all]
     [libpython-clj.python :as py]
     [panthera.pandas.generics :as g]
-    [panthera.pandas.utils :as u]
+    [panthera.pandas.utils :as u :reload true]
     [panthera.pandas.math :as m]))
 
 (deftest series
@@ -360,3 +360,21 @@
     nil
     nil
     [{0 0 1 1} {0 2 1 3} {0 4 1 5}]))
+
+(deftest set-index
+  (are [idx m oid ov]
+      (and (= (vec
+               (g/index
+                (g/set-index
+                 (g/data-frame [{:a 1 :b 2 :c 3} {:a 2 :b 3 :c 4}])
+                 idx m)))
+              oid)
+           (= (u/->clj
+               (g/set-index
+                (g/data-frame [{:a 1 :b 2 :c 3} {:a 2 :b 3 :c 4}])
+                idx m))
+              ov))
+    [:a] {} [1 2] [{:b 2 :c 3} {:b 3 :c 4}]
+    [:a :b] {} [[1 2] [2 3]] [{:c 3} {:c 4}]
+    [:a] {:drop false} [1 2] [{:a 1 :b 2 :c 3} {:a 2 :b 3 :c 4}]
+    [:a] {:append true} [[0 1] [1 2]] [{:b 2 :c 3} {:b 3 :c 4}]))
