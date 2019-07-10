@@ -1,6 +1,8 @@
 (ns panthera.pandas.utils
   (:require
     [libpython-clj.python :as py]
+    [libpython-clj.python.protocols :as py-proto]
+    [libpython-clj.python.interpreter :as py-interp]
     [camel-snake-kebab.core :as csk]
     [camel-snake-kebab.extras :as cske]
     [clojure.core.memoize :as m]))
@@ -28,7 +30,7 @@
   (m/fifo csk/->snake_case_string {} :fifo/threshold 512))
 
 (def memo-columns-converter
-  (m/fifo 
+  (m/fifo
    #(if (number? %)
       %
       (csk/->kebab-case-keyword %)) {} :fifo/threshold 512))
@@ -94,3 +96,20 @@
   [df kw pos & [attrs]]
   (py/call-attr-kw df kw [(vals->pylist pos)]
                    (keys->pyargs attrs)))
+
+
+(defn- iteritems-iterator
+  [pyobj interpreter]
+  (py-interp/with-interpreter interpreter
+    (-> (py/call-attr pyobj "iteritems")
+        (py-proto/python-obj-iterator interpreter))))
+
+
+(defmethod py-proto/python-obj-iterator :series
+  [pyobj interpreter]
+  (iteritems-iterator pyobj interpreter))
+
+
+(defmethod py-proto/python-obj-iterator :data-frame
+  [pyobj interpreter]
+    (iteritems-iterator pyobj interpreter))
