@@ -8,22 +8,24 @@
 (defn- base-math
   [k]
   (fn [& args]
-    (reduce #(py/call-attr %1
-                           ({:+    "__add__"
-                             :-    "__sub__"
-                             :*    "__mul__"
-                             :div  "__div__"
-                             :fld  "__floordiv__"
-                             :mod  "__mod__"
-                             :**   "__pow__"
-                             :<    "__lt__"
-                             :>    "__gt__"
-                             :<=   "__le__"
-                             :>=   "__ge__"
-                             :!=   "__ne__"
-                             :=    "__eq__"
-                             :dot  "__matmul__"} k)
-                           %2) args)))
+    (reduce 
+     #(py/call-attr 
+       %1
+       ({:+    "__add__"
+         :-    "__sub__"
+         :*    "__mul__"
+         :div  "__div__"
+         :fld  "__floordiv__"
+         :mod  "__mod__"
+         :**   "__pow__"
+         :<    "__lt__"
+         :>    "__gt__"
+         :<=   "__le__"
+         :>=   "__ge__"
+         :!=   "__ne__"
+         :=    "__eq__"
+         :dot  "__matmul__"} k)
+       %2) args)))
 
 (defn ops
   [df-or-srs other op & [attrs]]
@@ -163,7 +165,8 @@
   [k]
   (fn [df-or-srs & [attrs]]
     (u/simple-kw-call df-or-srs
-                      ({:kurt   "kurtosis"
+                      ({:sum    "sum"
+                        :kurt   "kurtosis"
                         :mad    "mad"
                         :max    "max"
                         :min    "min"
@@ -179,6 +182,9 @@
                         :std    "std"
                         :var    "var"} k)
                       attrs)))
+
+(def sum
+  (other-ops :sum))
 
 (def kurtosis
   (other-ops :kurt))
