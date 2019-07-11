@@ -81,9 +81,10 @@
   By calling `(npy k {:args [my-args] :other-arg 2})`
   you're calling that method with the given arguments.
   `:args` is a conveniency argument to pass positional
-  arguments to functions in the same order as you pass
-  them. This is because many Numpy functions have native
-  C implementations that accept only positional arguments.
+  arguments to functions in the same order as you'd pass
+  them to Numpy. This is because many Numpy functions
+  have native C implementations that accept only
+  positional arguments.
 
   For example `(npy :power {:args [[1 2] 2]})` will
   give back as a result `[1 4]` because we square
