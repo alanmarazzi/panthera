@@ -1,8 +1,8 @@
 (ns panthera.pandas.utils
   (:require
     [libpython-clj.python :as py]
-    [libpython-clj.python.protocols :as py-proto]
-    [libpython-clj.python.interpreter :as py-interp]
+    ;[libpython-clj.python.protocols :as py-proto]
+    ;[libpython-clj.python.interpreter :as py-interp]
     [camel-snake-kebab.core :as csk]
     [camel-snake-kebab.extras :as cske]
     [clojure.core.memoize :as m]))
@@ -31,9 +31,9 @@
 
 (def memo-columns-converter
   (m/fifo
-   #(if (number? %)
-      %
-      (csk/->kebab-case-keyword %)) {} :fifo/threshold 512))
+    #(if (number? %)
+       %
+       (csk/->kebab-case-keyword %)) {} :fifo/threshold 512))
 
 (defn vec->pylist
   [v]
@@ -50,13 +50,13 @@
 (defn vals->pylist
   [obj]
   (cond
-    (not (coll? obj))    obj
-    (map? obj)           obj
-    (nested-vector? obj) (to-array-2d obj)
-    (vector? obj)        (if (nested-slice? obj)
-                           obj
-                           (py/->py-list obj))
-    :else                obj))
+    (not (coll? obj)) obj
+                      (map? obj) obj
+                      (nested-vector? obj) (to-array-2d obj)
+                      (vector? obj) (if (nested-slice? obj)
+                                      obj
+                                      (py/->py-list obj))
+                      :else obj))
 
 (defn keys->pyargs
   [m]
@@ -78,14 +78,14 @@
   [df-or-srs]
   (if (series? df-or-srs)
     (let [nm (memo-columns-converter
-              (or (py/get-attr df-or-srs "name")
-                  :unnamed))]
+               (or (py/get-attr df-or-srs "name")
+                   :unnamed))]
       (into [] (map #(assoc {} nm %))
             (vec df-or-srs)))
     (let [ks (map memo-columns-converter
                   (py/get-attr df-or-srs "columns"))]
       (into [] (map #(zipmap ks %))
-               (py/get-attr df-or-srs "values")))))
+            (py/get-attr df-or-srs "values")))))
 
 (defn simple-kw-call
   [df kw & [attrs]]
@@ -97,19 +97,21 @@
   (py/call-attr-kw df kw [(vals->pylist pos)]
                    (keys->pyargs attrs)))
 
+(comment
+  "Proposed temporary workaround to the issue with ndarrays of bools"
 
-(defn- iteritems-iterator
-  [pyobj interpreter]
-  (py-interp/with-interpreter interpreter
-    (-> (py/call-attr pyobj "iteritems")
-        (py-proto/python-obj-iterator interpreter))))
+  (defn- iteritems-iterator
+    [pyobj interpreter]
+    (py-interp/with-interpreter
+      interpreter
+      (-> (py/call-attr pyobj "iteritems")
+          (py-proto/python-obj-iterator interpreter))))
 
-
-(defmethod py-proto/python-obj-iterator :series
-  [pyobj interpreter]
-  (iteritems-iterator pyobj interpreter))
-
-
-(defmethod py-proto/python-obj-iterator :data-frame
-  [pyobj interpreter]
+  (defmethod py-proto/python-obj-iterator :series
+    [pyobj interpreter]
     (iteritems-iterator pyobj interpreter))
+
+
+  (defmethod py-proto/python-obj-iterator :data-frame
+    [pyobj interpreter]
+    (iteritems-iterator pyobj interpreter)))
