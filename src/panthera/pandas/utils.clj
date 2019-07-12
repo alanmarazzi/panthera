@@ -51,12 +51,12 @@
   [obj]
   (cond
     (not (coll? obj)) obj
-                      (map? obj) obj
-                      (nested-vector? obj) (to-array-2d obj)
-                      (vector? obj) (if (nested-slice? obj)
-                                      obj
-                                      (py/->py-list obj))
-                      :else obj))
+    (map? obj) obj
+    (nested-vector? obj) (to-array-2d obj)
+    (vector? obj) (if (nested-slice? obj)
+                    obj
+                    (py/->py-list obj))
+    :else obj))
 
 (defn keys->pyargs
   [m]

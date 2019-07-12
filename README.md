@@ -1,5 +1,7 @@
 # panthera
 
+![panthera-logo](https://github.com/alanmarazzi/panthera/blob/master/resources/panthera.png)
+
 > Hic sunt leones
 
 Latin phrase reported on many maps indicating *Terra incognita*, unexplored or harsh land.
@@ -60,6 +62,27 @@ Numpy submodules (like random and linalg) will follow soon.
 ## Contributing
 
 Please let me know about any issues, quirks, ideas or even just to say that you're doing something cool with this! I accept issues, PRs or direct messages (you can find me also on https://clojurians.slack.com and on https://clojurians.zulipchat.com).
+
+## Examples
+
+You can find some examples in the [examples](https://github.com/alanmarazzi/panthera/tree/master/examples) folder. At the moment that's the best way to start with panthera.
+
+- [panthera intro](https://github.com/alanmarazzi/panthera/blob/master/examples/panthera-intro.ipynb) ([nbviewer](https://nbviewer.jupyter.org/github/alanmarazzi/panthera/blob/master/examples/panthera-intro.ipynb))
+- [basic concepts (serieses & data-frames)](https://github.com/alanmarazzi/panthera/blob/master/examples/basic-concepts.ipynb) ([nbviewer](https://nbviewer.jupyter.org/github/alanmarazzi/panthera/blob/master/examples/basic-concepts.ipynb))
+
+## Why "panthera"?
+
+Pandas is derived from "panel data" and somehow is supposed to mean "Python data analysis library" as well. Though it shouldn't have nothing to do with the cute Chinese bears, there are [logos showing a bear](https://michaelsaruggia.com/wp-content/uploads/2019/03/pandas-python.jpg).
+
+Panthera doesn't pretend to be a clever wordplay because it doesn't need to. First off [panthera is latin](https://en.wiktionary.org/wiki/panthera) and it literally means "large cat", second though pandas are surely cute, pantherae are way cooler (and [snow leopards](https://en.wikipedia.org/wiki/Snow_leopard) also happen to be among the very few predators of pandas, but that's just a case...).
+
+## Special thanks
+
+- [libpython-clj](https://github.com/cnuernber/libpython-clj)
+- [pandas](https://pandas.pydata.org/)
+- [numpy](https://www.numpy.org/)
+- [clojure](https://clojure.org/)
+- [logo](https://www.vecteezy.com)
 
 ## License
 
