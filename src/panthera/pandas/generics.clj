@@ -2,6 +2,8 @@
   "Here is a collection of generic functions and
   methods that help managing the underlying data
   structures such as series and data-frame."
+    (:refer-clojure
+     :exclude [any?])
   (:require
    [libpython-clj.python :as py]
    [panthera.pandas.utils :as u]))
@@ -189,14 +191,17 @@
   [df-or-srs value & [attrs]]
   (u/kw-call df-or-srs "fillna" value attrs))
 
-; Watch out!!!!! Use these 2 only confined in Python land
 (defn not-na?
   [df-or-srs]
   (py/call-attr df-or-srs "notna"))
 
 (defn all?
-  [df-or-srs]
-  (py/call-attr df-or-srs "all"))
+  [df-or-srs & [attrs]]
+  (u/simple-kw-call df-or-srs "all" attrs))
+
+(defn any?
+  [df-or-srs & [attrs]]
+  (u/simple-kw-call df-or-srs "any" attrs))
 
 (defn select-rows
   "This is used for filtering by index.

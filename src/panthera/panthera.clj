@@ -69,7 +69,6 @@
  eq
  compound
  mean
- all?
  corr
  sub
  mod

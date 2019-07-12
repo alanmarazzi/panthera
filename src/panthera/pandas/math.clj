@@ -1,6 +1,6 @@
 (ns panthera.pandas.math
   (:refer-clojure
-   :exclude [any? mod])
+   :exclude [mod])
   (:require
    [libpython-clj.python :as py]
    [panthera.pandas.utils :as u]))
@@ -90,14 +90,6 @@
 (defn abs
   [df-or-srs]
   (py/call-attr df-or-srs "abs"))
-
-(defn all?
-  [df-or-srs & [attrs]]
-  (u/simple-kw-call df-or-srs "all" attrs))
-
-(defn any?
-  [df-or-srs & [attrs]]
-  (u/simple-kw-call df-or-srs "any" attrs))
 
 (defn autocorr
   [srs & [lag]]
