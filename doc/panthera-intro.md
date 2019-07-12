@@ -1,0 +1,3144 @@
+
+# Data science intro with panthera
+## Clojure + Pandas + Numpy = 💖
+
+I'll show how it is possible to get the most out of the [Pandas](https://pandas.pydata.org/) & the Clojure ecosystem at the same time.
+
+This intro is based on this [Kaggle notebook](https://www.kaggle.com/kanncaa1/data-sciencetutorial-for-beginners) you can follow along with that if you come from the Python world.
+
+## Env setup
+
+The easiest way to go is the provided [Docker image](https://cloud.docker.com/u/alanmarazzi/repository/docker/alanmarazzi/panthera), but if you want to setup your machine just follow along.
+
+### System install
+
+If you want to install everything at the system level you should do something equivalent to what we do below:
+
+```bash
+sudo apt-get update
+sudo apt-get install libpython3.6-dev
+pip3 install numpy pandas
+```
+
+### conda
+
+To work within a conda environment just create a new one with:
+
+```bash
+conda create -n panthera python=3.6 numpy pandas
+conda activate panthera
+```
+Than start your REPL from the activated conda environment. This is the best way to install requirements for panthera because in the process you get MKL as well with Numpy.
+
+### Here
+
+Let's just add panthera to our classpath and we're good to go!
+
+
+```clojure
+(require '[clojupyter.misc.helper :as helper])
+(helper/add-dependencies '[panthera "0.1-alpha.9"])
+:ok
+```
+
+
+
+
+    :ok
+
+
+
+Now require panthera main API namespace and define a little helper to better inspect data-frames
+
+
+```clojure
+(require '[panthera.panthera :as pt])
+```
+
+
+
+
+    nil
+
+
+
+
+```clojure
+(require '[clojupyter.display :as display])
+(require '[libpython-clj.python :as py])
+
+(defn show
+  [obj]
+  (display/html
+    (py/call-attr obj "to_html")))
+```
+
+
+
+
+    #'user/show
+
+
+
+
+```clojure
+(helper/add-dependencies '[metasoarous/oz "1.5.4"])
+(require '[oz.notebook.clojupyter :as oz])
+```
+
+
+
+
+    nil
+
+
+
+## A brief primer
+
+We will work with Pokemons! Datasets are available [here](https://www.kaggle.com/kanncaa1/data-sciencetutorial-for-beginners/data).
+
+We can read data into panthera from various formats, one of the most used is `read-csv`. Most panthera functions accept either a data-frame and/or a series as a first argument, one or more required arguments and then a map of options.
+
+To see which options are available you can check docs or even original [Pandas docs](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html#pandas.read_csv), just remember that if you pass keywords they'll be converted to Python automatically (for example `:index-col` becomes `index_col`), while if you pass strings you have to use its original name.
+
+Below as an example we `read-csv` our file, but we want to get only the first 10 rows, so we pass a map to the function like `{:nrows 10}`.
+
+
+```clojure
+(show (pt/read-csv "../resources/pokemon.csv" {:nrows 10}))
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>Name</th>
+      <th>Type 1</th>
+      <th>Type 2</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>Bulbasaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>45</td>
+      <td>49</td>
+      <td>49</td>
+      <td>65</td>
+      <td>65</td>
+      <td>45</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>Ivysaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>60</td>
+      <td>62</td>
+      <td>63</td>
+      <td>80</td>
+      <td>80</td>
+      <td>60</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>82</td>
+      <td>83</td>
+      <td>100</td>
+      <td>100</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>Mega Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>100</td>
+      <td>123</td>
+      <td>122</td>
+      <td>120</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>Charmander</td>
+      <td>Fire</td>
+      <td>NaN</td>
+      <td>39</td>
+      <td>52</td>
+      <td>43</td>
+      <td>60</td>
+      <td>50</td>
+      <td>65</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>6</td>
+      <td>Charmeleon</td>
+      <td>Fire</td>
+      <td>NaN</td>
+      <td>58</td>
+      <td>64</td>
+      <td>58</td>
+      <td>80</td>
+      <td>65</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>7</td>
+      <td>Charizard</td>
+      <td>Fire</td>
+      <td>Flying</td>
+      <td>78</td>
+      <td>84</td>
+      <td>78</td>
+      <td>109</td>
+      <td>85</td>
+      <td>100</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>8</td>
+      <td>Mega Charizard X</td>
+      <td>Fire</td>
+      <td>Dragon</td>
+      <td>78</td>
+      <td>130</td>
+      <td>111</td>
+      <td>130</td>
+      <td>85</td>
+      <td>100</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>9</td>
+      <td>Mega Charizard Y</td>
+      <td>Fire</td>
+      <td>Flying</td>
+      <td>78</td>
+      <td>104</td>
+      <td>78</td>
+      <td>159</td>
+      <td>115</td>
+      <td>100</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>10</td>
+      <td>Squirtle</td>
+      <td>Water</td>
+      <td>NaN</td>
+      <td>44</td>
+      <td>48</td>
+      <td>65</td>
+      <td>50</td>
+      <td>64</td>
+      <td>43</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+The cool thing is that we can chain operations, the threading first macro is our friend!
+
+Below we read the whole csv, get the correlation matrix and then show it
+
+
+```clojure
+(-> (pt/read-csv "../resources/pokemon.csv")
+    pt/corr
+    show)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>#</th>
+      <td>1.000000</td>
+      <td>0.097712</td>
+      <td>0.102664</td>
+      <td>0.094691</td>
+      <td>0.089199</td>
+      <td>0.085596</td>
+      <td>0.012181</td>
+      <td>0.983428</td>
+      <td>0.154336</td>
+    </tr>
+    <tr>
+      <th>HP</th>
+      <td>0.097712</td>
+      <td>1.000000</td>
+      <td>0.422386</td>
+      <td>0.239622</td>
+      <td>0.362380</td>
+      <td>0.378718</td>
+      <td>0.175952</td>
+      <td>0.058683</td>
+      <td>0.273620</td>
+    </tr>
+    <tr>
+      <th>Attack</th>
+      <td>0.102664</td>
+      <td>0.422386</td>
+      <td>1.000000</td>
+      <td>0.438687</td>
+      <td>0.396362</td>
+      <td>0.263990</td>
+      <td>0.381240</td>
+      <td>0.051451</td>
+      <td>0.345408</td>
+    </tr>
+    <tr>
+      <th>Defense</th>
+      <td>0.094691</td>
+      <td>0.239622</td>
+      <td>0.438687</td>
+      <td>1.000000</td>
+      <td>0.223549</td>
+      <td>0.510747</td>
+      <td>0.015227</td>
+      <td>0.042419</td>
+      <td>0.246377</td>
+    </tr>
+    <tr>
+      <th>Sp. Atk</th>
+      <td>0.089199</td>
+      <td>0.362380</td>
+      <td>0.396362</td>
+      <td>0.223549</td>
+      <td>1.000000</td>
+      <td>0.506121</td>
+      <td>0.473018</td>
+      <td>0.036437</td>
+      <td>0.448907</td>
+    </tr>
+    <tr>
+      <th>Sp. Def</th>
+      <td>0.085596</td>
+      <td>0.378718</td>
+      <td>0.263990</td>
+      <td>0.510747</td>
+      <td>0.506121</td>
+      <td>1.000000</td>
+      <td>0.259133</td>
+      <td>0.028486</td>
+      <td>0.363937</td>
+    </tr>
+    <tr>
+      <th>Speed</th>
+      <td>0.012181</td>
+      <td>0.175952</td>
+      <td>0.381240</td>
+      <td>0.015227</td>
+      <td>0.473018</td>
+      <td>0.259133</td>
+      <td>1.000000</td>
+      <td>-0.023121</td>
+      <td>0.326715</td>
+    </tr>
+    <tr>
+      <th>Generation</th>
+      <td>0.983428</td>
+      <td>0.058683</td>
+      <td>0.051451</td>
+      <td>0.042419</td>
+      <td>0.036437</td>
+      <td>0.028486</td>
+      <td>-0.023121</td>
+      <td>1.000000</td>
+      <td>0.079794</td>
+    </tr>
+    <tr>
+      <th>Legendary</th>
+      <td>0.154336</td>
+      <td>0.273620</td>
+      <td>0.345408</td>
+      <td>0.246377</td>
+      <td>0.448907</td>
+      <td>0.363937</td>
+      <td>0.326715</td>
+      <td>0.079794</td>
+      <td>1.000000</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+Since we'll be using `pokemon.csv` a lot, let's give it a name, `defonce` is great here
+
+
+```clojure
+(defonce pokemon (pt/read-csv "../resources/pokemon.csv"))
+```
+
+
+
+
+    #'user/pokemon
+
+
+
+Let's see how plotting goes
+
+
+```clojure
+(defn heatmap 
+  [data x y z]
+  {:data {:values data}
+   :width 500
+   :height 500
+   :encoding {:x {:field x
+                  :type "nominal"}
+              :y {:field y
+                  :type "nominal"}}
+   :layer [{:mark "rect"
+            :encoding {:color {:field z
+                               :type "quantitative"}}}
+           {:mark "text"
+            :encoding {:text 
+                       {:field z
+                        :type "quantitative"
+                        :format ".2f"}
+                       :color {:value "white"}}}]})
+```
+
+
+
+
+    #'user/heatmap
+
+
+
+
+```clojure
+(-> pokemon
+    pt/corr
+    pt/reset-index
+    (pt/melt {:id-vars :index})
+    pt/->clj
+    (heatmap :index :variable :value)
+    oz/view!)
+```
+
+
+
+
+
+<div>
+  <div id='uuid-bf8d1133-7ab7-41ff-999a-29b2779ef793'></div>
+  <script>
+  requirejs.config({
+    baseUrl: 'https://cdn.jsdelivr.net/npm/',
+    paths: {
+      'vega-embed':  'vega-embed@3?noext',
+      'vega-lib': 'vega-lib?noext',
+      'vega-lite': 'vega-lite@2?noext',
+      'vega': 'vega@3?noext'
+    }
+  });
+  require(['vega-embed'], function(vegaEmbed) {
+    let spec = {"data":{"values":[{"index":"#","variable":"#","value":1.0},{"index":"HP","variable":"#","value":0.0977123279793967},{"index":"Attack","variable":"#","value":0.10266440267663766},{"index":"Defense","variable":"#","value":0.0946906724168048},{"index":"Sp. Atk","variable":"#","value":0.0891993186423977},{"index":"Sp. Def","variable":"#","value":0.0855955930256973},{"index":"Speed","variable":"#","value":0.012180693402176939},{"index":"Generation","variable":"#","value":0.9834279016098693},{"index":"Legendary","variable":"#","value":0.15433554481371412},{"index":"#","variable":"HP","value":0.0977123279793967},{"index":"HP","variable":"HP","value":1.0},{"index":"Attack","variable":"HP","value":0.4223860287762238},{"index":"Defense","variable":"HP","value":0.2396223188467262},{"index":"Sp. Atk","variable":"HP","value":0.36237985740715783},{"index":"Sp. Def","variable":"HP","value":0.378718068612564},{"index":"Speed","variable":"HP","value":0.17595206187898574},{"index":"Generation","variable":"HP","value":0.058682508040739954},{"index":"Legendary","variable":"HP","value":0.27361955771295066},{"index":"#","variable":"Attack","value":0.10266440267663766},{"index":"HP","variable":"Attack","value":0.4223860287762238},{"index":"Attack","variable":"Attack","value":1.0},{"index":"Defense","variable":"Attack","value":0.4386870551184902},{"index":"Sp. Atk","variable":"Attack","value":0.39636175534923296},{"index":"Sp. Def","variable":"Attack","value":0.263989551101088},{"index":"Speed","variable":"Attack","value":0.3812397392410901},{"index":"Generation","variable":"Attack","value":0.05145133670846967},{"index":"Legendary","variable":"Attack","value":0.3454079755555302},{"index":"#","variable":"Defense","value":0.0946906724168048},{"index":"HP","variable":"Defense","value":0.2396223188467262},{"index":"Attack","variable":"Defense","value":0.4386870551184902},{"index":"Defense","variable":"Defense","value":1.0},{"index":"Sp. Atk","variable":"Defense","value":0.2235486094724222},{"index":"Sp. Def","variable":"Defense","value":0.5107465890885579},{"index":"Speed","variable":"Defense","value":0.01522659808859747},{"index":"Generation","variable":"Defense","value":0.04241856657677686},{"index":"Legendary","variable":"Defense","value":0.24637680045403393},{"index":"#","variable":"Sp. Atk","value":0.0891993186423977},{"index":"HP","variable":"Sp. Atk","value":0.36237985740715783},{"index":"Attack","variable":"Sp. Atk","value":0.39636175534923296},{"index":"Defense","variable":"Sp. Atk","value":0.2235486094724222},{"index":"Sp. Atk","variable":"Sp. Atk","value":1.0},{"index":"Sp. Def","variable":"Sp. Atk","value":0.5061214206155483},{"index":"Speed","variable":"Sp. Atk","value":0.4730178836686994},{"index":"Generation","variable":"Sp. Atk","value":0.03643682864867449},{"index":"Legendary","variable":"Sp. Atk","value":0.44890725643865526},{"index":"#","variable":"Sp. Def","value":0.0855955930256973},{"index":"HP","variable":"Sp. Def","value":0.378718068612564},{"index":"Attack","variable":"Sp. Def","value":0.263989551101088},{"index":"Defense","variable":"Sp. Def","value":0.5107465890885579},{"index":"Sp. Atk","variable":"Sp. Def","value":0.5061214206155483},{"index":"Sp. Def","variable":"Sp. Def","value":1.0},{"index":"Speed","variable":"Sp. Def","value":0.2591331139168082},{"index":"Generation","variable":"Sp. Def","value":0.028485991779451006},{"index":"Legendary","variable":"Sp. Def","value":0.3639371167456877},{"index":"#","variable":"Speed","value":0.012180693402176939},{"index":"HP","variable":"Speed","value":0.17595206187898574},{"index":"Attack","variable":"Speed","value":0.3812397392410901},{"index":"Defense","variable":"Speed","value":0.01522659808859747},{"index":"Sp. Atk","variable":"Speed","value":0.4730178836686994},{"index":"Sp. Def","variable":"Speed","value":0.2591331139168082},{"index":"Speed","variable":"Speed","value":1.0},{"index":"Generation","variable":"Speed","value":-0.023121060425896966},{"index":"Legendary","variable":"Speed","value":0.3267152948309066},{"index":"#","variable":"Generation","value":0.9834279016098693},{"index":"HP","variable":"Generation","value":0.058682508040739954},{"index":"Attack","variable":"Generation","value":0.05145133670846967},{"index":"Defense","variable":"Generation","value":0.04241856657677686},{"index":"Sp. Atk","variable":"Generation","value":0.03643682864867449},{"index":"Sp. Def","variable":"Generation","value":0.028485991779451006},{"index":"Speed","variable":"Generation","value":-0.023121060425896966},{"index":"Generation","variable":"Generation","value":1.0},{"index":"Legendary","variable":"Generation","value":0.07979359239925084},{"index":"#","variable":"Legendary","value":0.15433554481371412},{"index":"HP","variable":"Legendary","value":0.27361955771295066},{"index":"Attack","variable":"Legendary","value":0.3454079755555302},{"index":"Defense","variable":"Legendary","value":0.24637680045403393},{"index":"Sp. Atk","variable":"Legendary","value":0.44890725643865526},{"index":"Sp. Def","variable":"Legendary","value":0.3639371167456877},{"index":"Speed","variable":"Legendary","value":0.3267152948309066},{"index":"Generation","variable":"Legendary","value":0.07979359239925084},{"index":"Legendary","variable":"Legendary","value":1.0}]},"width":500,"height":500,"encoding":{"x":{"field":"index","type":"nominal"},"y":{"field":"variable","type":"nominal"}},"layer":[{"mark":"rect","encoding":{"color":{"field":"value","type":"quantitative"}}},{"mark":"text","encoding":{"text":{"field":"value","type":"quantitative","format":".2f"},"color":{"value":"white"}}}]};
+    vegaEmbed('#uuid-bf8d1133-7ab7-41ff-999a-29b2779ef793', spec, {defaultStyle:true}).catch(console.warn);
+    }, function(err) {
+    console.log('Failed to load');
+  });
+  </script>
+</div>
+  
+
+
+
+What we did is plotting the heatmap of the correlation matrix shown above. Don't worry too much to all the steps we took, we'll be seeing all of them one by one later on!
+
+What if we already read our data but we want to see only some rows? We have the `head` function for that
+
+
+```clojure
+(show (pt/head pokemon))
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>Name</th>
+      <th>Type 1</th>
+      <th>Type 2</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>Bulbasaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>45</td>
+      <td>49</td>
+      <td>49</td>
+      <td>65</td>
+      <td>65</td>
+      <td>45</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>Ivysaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>60</td>
+      <td>62</td>
+      <td>63</td>
+      <td>80</td>
+      <td>80</td>
+      <td>60</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>82</td>
+      <td>83</td>
+      <td>100</td>
+      <td>100</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>Mega Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>100</td>
+      <td>123</td>
+      <td>122</td>
+      <td>120</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>Charmander</td>
+      <td>Fire</td>
+      <td>NaN</td>
+      <td>39</td>
+      <td>52</td>
+      <td>43</td>
+      <td>60</td>
+      <td>50</td>
+      <td>65</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+```clojure
+(show (pt/head pokemon 10))
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>Name</th>
+      <th>Type 1</th>
+      <th>Type 2</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>Bulbasaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>45</td>
+      <td>49</td>
+      <td>49</td>
+      <td>65</td>
+      <td>65</td>
+      <td>45</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>Ivysaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>60</td>
+      <td>62</td>
+      <td>63</td>
+      <td>80</td>
+      <td>80</td>
+      <td>60</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>82</td>
+      <td>83</td>
+      <td>100</td>
+      <td>100</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>Mega Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>100</td>
+      <td>123</td>
+      <td>122</td>
+      <td>120</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>Charmander</td>
+      <td>Fire</td>
+      <td>NaN</td>
+      <td>39</td>
+      <td>52</td>
+      <td>43</td>
+      <td>60</td>
+      <td>50</td>
+      <td>65</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>6</td>
+      <td>Charmeleon</td>
+      <td>Fire</td>
+      <td>NaN</td>
+      <td>58</td>
+      <td>64</td>
+      <td>58</td>
+      <td>80</td>
+      <td>65</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>7</td>
+      <td>Charizard</td>
+      <td>Fire</td>
+      <td>Flying</td>
+      <td>78</td>
+      <td>84</td>
+      <td>78</td>
+      <td>109</td>
+      <td>85</td>
+      <td>100</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>8</td>
+      <td>Mega Charizard X</td>
+      <td>Fire</td>
+      <td>Dragon</td>
+      <td>78</td>
+      <td>130</td>
+      <td>111</td>
+      <td>130</td>
+      <td>85</td>
+      <td>100</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>9</td>
+      <td>Mega Charizard Y</td>
+      <td>Fire</td>
+      <td>Flying</td>
+      <td>78</td>
+      <td>104</td>
+      <td>78</td>
+      <td>159</td>
+      <td>115</td>
+      <td>100</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>10</td>
+      <td>Squirtle</td>
+      <td>Water</td>
+      <td>NaN</td>
+      <td>44</td>
+      <td>48</td>
+      <td>65</td>
+      <td>50</td>
+      <td>64</td>
+      <td>43</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+Another nice thing we can do is to get columns names
+
+
+```clojure
+(pt/names pokemon)
+```
+
+
+
+
+    Index(['#', 'Name', 'Type 1', 'Type 2', 'HP', 'Attack', 'Defense', 'Sp. Atk',
+           'Sp. Def', 'Speed', 'Generation', 'Legendary'],
+          dtype='object')
+
+
+
+Now when you see an output as the above one, that means that the data we have is still in Python. That's ok if you keep working within panthera, but what if you want to do something with column names using Clojure?
+
+
+```clojure
+(vec (pt/names pokemon))
+```
+
+
+
+
+    ["#" "Name" "Type 1" "Type 2" "HP" "Attack" "Defense" "Sp. Atk" "Sp. Def" "Speed" "Generation" "Legendary"]
+
+
+
+That's it! Just call `vec`and now you have a nice Clojure vector that you can deal with.
+
+> N.B.: with many Python objects you can directly treat them as similar Clojure collections. For instance in this case we can do something like below
+
+
+```clojure
+(doseq [a (pt/names pokemon)] (println a))
+```
+
+    #
+    Name
+    Type 1
+    Type 2
+    HP
+    Attack
+    Defense
+    Sp. Atk
+    Sp. Def
+    Speed
+    Generation
+    Legendary
+    
+
+
+
+
+    nil
+
+
+
+## Some plotting
+
+Plotting is nice to learn how to munge data: you get a fast visual feedback and usually results are nice to look at!
+
+Let's plot `Speed` and `Defense`
+
+
+```clojure
+(defn line-plot
+  [data x y & [color]]
+  (let [spec {:data {:values data}
+              :mark "line"
+              :width 600
+              :height 300
+              :encoding {:x {:field x
+                             :type "quantitative"}
+                         :y {:field y
+                             :type "quantitative"}
+                         :color {}}}]
+    (if color
+      (assoc-in spec [:encoding :color] {:field color
+                                         :type "nominal"})
+      (assoc-in spec [:encoding :color] {:value "blue"}))))
+```
+
+
+
+
+    #'user/line-plot
+
+
+
+
+```clojure
+(-> pokemon
+    (pt/subset-cols :# :Speed :Defense)
+    (pt/melt {:id-vars :#})
+    pt/->clj
+    (line-plot :# :value :variable)
+    oz/view!)
+```
+
+
+
+
+
+<div>
+  <div id='uuid-853567ee-d3c2-40da-be8d-aa007164a748'></div>
+  <script>
+  requirejs.config({
+    baseUrl: 'https://cdn.jsdelivr.net/npm/',
+    paths: {
+      'vega-embed':  'vega-embed@3?noext',
+      'vega-lib': 'vega-lib?noext',
+      'vega-lite': 'vega-lite@2?noext',
+      'vega': 'vega@3?noext'
+    }
+  });
+  require(['vega-embed'], function(vegaEmbed) {
+    let spec = {"data":{"values":[{"#":1,"variable":"Speed","value":45},{"#":2,"variable":"Speed","value":60},{"#":3,"variable":"Speed","value":80},{"#":4,"variable":"Speed","value":80},{"#":5,"variable":"Speed","value":65},{"#":6,"variable":"Speed","value":80},{"#":7,"variable":"Speed","value":100},{"#":8,"variable":"Speed","value":100},{"#":9,"variable":"Speed","value":100},{"#":10,"variable":"Speed","value":43},{"#":11,"variable":"Speed","value":58},{"#":12,"variable":"Speed","value":78},{"#":13,"variable":"Speed","value":78},{"#":14,"variable":"Speed","value":45},{"#":15,"variable":"Speed","value":30},{"#":16,"variable":"Speed","value":70},{"#":17,"variable":"Speed","value":50},{"#":18,"variable":"Speed","value":35},{"#":19,"variable":"Speed","value":75},{"#":20,"variable":"Speed","value":145},{"#":21,"variable":"Speed","value":56},{"#":22,"variable":"Speed","value":71},{"#":23,"variable":"Speed","value":101},{"#":24,"variable":"Speed","value":121},{"#":25,"variable":"Speed","value":72},{"#":26,"variable":"Speed","value":97},{"#":27,"variable":"Speed","value":70},{"#":28,"variable":"Speed","value":100},{"#":29,"variable":"Speed","value":55},{"#":30,"variable":"Speed","value":80},{"#":31,"variable":"Speed","value":90},{"#":32,"variable":"Speed","value":110},{"#":33,"variable":"Speed","value":40},{"#":34,"variable":"Speed","value":65},{"#":35,"variable":"Speed","value":41},{"#":36,"variable":"Speed","value":56},{"#":37,"variable":"Speed","value":76},{"#":38,"variable":"Speed","value":50},{"#":39,"variable":"Speed","value":65},{"#":40,"variable":"Speed","value":85},{"#":41,"variable":"Speed","value":35},{"#":42,"variable":"Speed","value":60},{"#":43,"variable":"Speed","value":65},{"#":44,"variable":"Speed","value":100},{"#":45,"variable":"Speed","value":20},{"#":46,"variable":"Speed","value":45},{"#":47,"variable":"Speed","value":55},{"#":48,"variable":"Speed","value":90},{"#":49,"variable":"Speed","value":30},{"#":50,"variable":"Speed","value":40},{"#":51,"variable":"Speed","value":50},{"#":52,"variable":"Speed","value":25},{"#":53,"variable":"Speed","value":30},{"#":54,"variable":"Speed","value":45},{"#":55,"variable":"Speed","value":90},{"#":56,"variable":"Speed","value":95},{"#":57,"variable":"Speed","value":120},{"#":58,"variable":"Speed","value":90},{"#":59,"variable":"Speed","value":115},{"#":60,"variable":"Speed","value":55},{"#":61,"variable":"Speed","value":85},{"#":62,"variable":"Speed","value":70},{"#":63,"variable":"Speed","value":95},{"#":64,"variable":"Speed","value":60},{"#":65,"variable":"Speed","value":95},{"#":66,"variable":"Speed","value":90},{"#":67,"variable":"Speed","value":90},{"#":68,"variable":"Speed","value":70},{"#":69,"variable":"Speed","value":90},{"#":70,"variable":"Speed","value":105},{"#":71,"variable":"Speed","value":120},{"#":72,"variable":"Speed","value":150},{"#":73,"variable":"Speed","value":35},{"#":74,"variable":"Speed","value":45},{"#":75,"variable":"Speed","value":55},{"#":76,"variable":"Speed","value":40},{"#":77,"variable":"Speed","value":55},{"#":78,"variable":"Speed","value":70},{"#":79,"variable":"Speed","value":70},{"#":80,"variable":"Speed","value":100},{"#":81,"variable":"Speed","value":20},{"#":82,"variable":"Speed","value":35},{"#":83,"variable":"Speed","value":45},{"#":84,"variable":"Speed","value":90},{"#":85,"variable":"Speed","value":105},{"#":86,"variable":"Speed","value":15},{"#":87,"variable":"Speed","value":30},{"#":88,"variable":"Speed","value":30},{"#":89,"variable":"Speed","value":45},{"#":90,"variable":"Speed","value":70},{"#":91,"variable":"Speed","value":60},{"#":92,"variable":"Speed","value":75},{"#":93,"variable":"Speed","value":100},{"#":94,"variable":"Speed","value":45},{"#":95,"variable":"Speed","value":70},{"#":96,"variable":"Speed","value":25},{"#":97,"variable":"Speed","value":50},{"#":98,"variable":"Speed","value":40},{"#":99,"variable":"Speed","value":70},{"#":100,"variable":"Speed","value":80},{"#":101,"variable":"Speed","value":95},{"#":102,"variable":"Speed","value":110},{"#":103,"variable":"Speed","value":130},{"#":104,"variable":"Speed","value":70},{"#":105,"variable":"Speed","value":42},{"#":106,"variable":"Speed","value":67},{"#":107,"variable":"Speed","value":50},{"#":108,"variable":"Speed","value":75},{"#":109,"variable":"Speed","value":100},{"#":110,"variable":"Speed","value":140},{"#":111,"variable":"Speed","value":40},{"#":112,"variable":"Speed","value":55},{"#":113,"variable":"Speed","value":35},{"#":114,"variable":"Speed","value":45},{"#":115,"variable":"Speed","value":87},{"#":116,"variable":"Speed","value":76},{"#":117,"variable":"Speed","value":30},{"#":118,"variable":"Speed","value":35},{"#":119,"variable":"Speed","value":60},{"#":120,"variable":"Speed","value":25},{"#":121,"variable":"Speed","value":40},{"#":122,"variable":"Speed","value":50},{"#":123,"variable":"Speed","value":60},{"#":124,"variable":"Speed","value":90},{"#":125,"variable":"Speed","value":100},{"#":126,"variable":"Speed","value":60},{"#":127,"variable":"Speed","value":85},{"#":128,"variable":"Speed","value":63},{"#":129,"variable":"Speed","value":68},{"#":130,"variable":"Speed","value":85},{"#":131,"variable":"Speed","value":115},{"#":132,"variable":"Speed","value":90},{"#":133,"variable":"Speed","value":105},{"#":134,"variable":"Speed","value":95},{"#":135,"variable":"Speed","value":105},{"#":136,"variable":"Speed","value":93},{"#":137,"variable":"Speed","value":85},{"#":138,"variable":"Speed","value":105},{"#":139,"variable":"Speed","value":110},{"#":140,"variable":"Speed","value":80},{"#":141,"variable":"Speed","value":81},{"#":142,"variable":"Speed","value":81},{"#":143,"variable":"Speed","value":60},{"#":144,"variable":"Speed","value":48},{"#":145,"variable":"Speed","value":55},{"#":146,"variable":"Speed","value":65},{"#":147,"variable":"Speed","value":130},{"#":148,"variable":"Speed","value":65},{"#":149,"variable":"Speed","value":40},{"#":150,"variable":"Speed","value":35},{"#":151,"variable":"Speed","value":55},{"#":152,"variable":"Speed","value":55},{"#":153,"variable":"Speed","value":80},{"#":154,"variable":"Speed","value":130},{"#":155,"variable":"Speed","value":150},{"#":156,"variable":"Speed","value":30},{"#":157,"variable":"Speed","value":85},{"#":158,"variable":"Speed","value":100},{"#":159,"variable":"Speed","value":90},{"#":160,"variable":"Speed","value":50},{"#":161,"variable":"Speed","value":70},{"#":162,"variable":"Speed","value":80},{"#":163,"variable":"Speed","value":130},{"#":164,"variable":"Speed","value":130},{"#":165,"variable":"Speed","value":140},{"#":166,"variable":"Speed","value":100},{"#":167,"variable":"Speed","value":45},{"#":168,"variable":"Speed","value":60},{"#":169,"variable":"Speed","value":80},{"#":170,"variable":"Speed","value":65},{"#":171,"variable":"Speed","value":80},{"#":172,"variable":"Speed","value":100},{"#":173,"variable":"Speed","value":43},{"#":174,"variable":"Speed","value":58},{"#":175,"variable":"Speed","value":78},{"#":176,"variable":"Speed","value":20},{"#":177,"variable":"Speed","value":90},{"#":178,"variable":"Speed","value":50},{"#":179,"variable":"Speed","value":70},{"#":180,"variable":"Speed","value":55},{"#":181,"variable":"Speed","value":85},{"#":182,"variable":"Speed","value":30},{"#":183,"variable":"Speed","value":40},{"#":184,"variable":"Speed","value":130},{"#":185,"variable":"Speed","value":67},{"#":186,"variable":"Speed","value":67},{"#":187,"variable":"Speed","value":60},{"#":188,"variable":"Speed","value":15},{"#":189,"variable":"Speed","value":15},{"#":190,"variable":"Speed","value":20},{"#":191,"variable":"Speed","value":40},{"#":192,"variable":"Speed","value":70},{"#":193,"variable":"Speed","value":95},{"#":194,"variable":"Speed","value":35},{"#":195,"variable":"Speed","value":45},{"#":196,"variable":"Speed","value":55},{"#":197,"variable":"Speed","value":45},{"#":198,"variable":"Speed","value":50},{"#":199,"variable":"Speed","value":40},{"#":200,"variable":"Speed","value":50},{"#":201,"variable":"Speed","value":30},{"#":202,"variable":"Speed","value":70},{"#":203,"variable":"Speed","value":50},{"#":204,"variable":"Speed","value":80},{"#":205,"variable":"Speed","value":110},{"#":206,"variable":"Speed","value":85},{"#":207,"variable":"Speed","value":30},{"#":208,"variable":"Speed","value":30},{"#":209,"variable":"Speed","value":95},{"#":210,"variable":"Speed","value":15},{"#":211,"variable":"Speed","value":35},{"#":212,"variable":"Speed","value":110},{"#":213,"variable":"Speed","value":65},{"#":214,"variable":"Speed","value":91},{"#":215,"variable":"Speed","value":30},{"#":216,"variable":"Speed","value":85},{"#":217,"variable":"Speed","value":48},{"#":218,"variable":"Speed","value":33},{"#":219,"variable":"Speed","value":85},{"#":220,"variable":"Speed","value":15},{"#":221,"variable":"Speed","value":40},{"#":222,"variable":"Speed","value":45},{"#":223,"variable":"Speed","value":85},{"#":224,"variable":"Speed","value":30},{"#":225,"variable":"Speed","value":30},{"#":226,"variable":"Speed","value":30},{"#":227,"variable":"Speed","value":45},{"#":228,"variable":"Speed","value":85},{"#":229,"variable":"Speed","value":65},{"#":230,"variable":"Speed","value":75},{"#":231,"variable":"Speed","value":5},{"#":232,"variable":"Speed","value":85},{"#":233,"variable":"Speed","value":75},{"#":234,"variable":"Speed","value":115},{"#":235,"variable":"Speed","value":40},{"#":236,"variable":"Speed","value":55},{"#":237,"variable":"Speed","value":20},{"#":238,"variable":"Speed","value":30},{"#":239,"variable":"Speed","value":50},{"#":240,"variable":"Speed","value":50},{"#":241,"variable":"Speed","value":35},{"#":242,"variable":"Speed","value":65},{"#":243,"variable":"Speed","value":45},{"#":244,"variable":"Speed","value":75},{"#":245,"variable":"Speed","value":70},{"#":246,"variable":"Speed","value":70},{"#":247,"variable":"Speed","value":65},{"#":248,"variable":"Speed","value":95},{"#":249,"variable":"Speed","value":115},{"#":250,"variable":"Speed","value":85},{"#":251,"variable":"Speed","value":40},{"#":252,"variable":"Speed","value":50},{"#":253,"variable":"Speed","value":60},{"#":254,"variable":"Speed","value":85},{"#":255,"variable":"Speed","value":75},{"#":256,"variable":"Speed","value":35},{"#":257,"variable":"Speed","value":70},{"#":258,"variable":"Speed","value":65},{"#":259,"variable":"Speed","value":95},{"#":260,"variable":"Speed","value":83},{"#":261,"variable":"Speed","value":100},{"#":262,"variable":"Speed","value":55},{"#":263,"variable":"Speed","value":115},{"#":264,"variable":"Speed","value":100},{"#":265,"variable":"Speed","value":85},{"#":266,"variable":"Speed","value":41},{"#":267,"variable":"Speed","value":51},{"#":268,"variable":"Speed","value":61},{"#":269,"variable":"Speed","value":71},{"#":270,"variable":"Speed","value":110},{"#":271,"variable":"Speed","value":90},{"#":272,"variable":"Speed","value":100},{"#":273,"variable":"Speed","value":70},{"#":274,"variable":"Speed","value":95},{"#":275,"variable":"Speed","value":120},{"#":276,"variable":"Speed","value":145},{"#":277,"variable":"Speed","value":45},{"#":278,"variable":"Speed","value":55},{"#":279,"variable":"Speed","value":80},{"#":280,"variable":"Speed","value":100},{"#":281,"variable":"Speed","value":40},{"#":282,"variable":"Speed","value":50},{"#":283,"variable":"Speed","value":60},{"#":284,"variable":"Speed","value":70},{"#":285,"variable":"Speed","value":35},{"#":286,"variable":"Speed","value":70},{"#":287,"variable":"Speed","value":60},{"#":288,"variable":"Speed","value":100},{"#":289,"variable":"Speed","value":20},{"#":290,"variable":"Speed","value":15},{"#":291,"variable":"Speed","value":65},{"#":292,"variable":"Speed","value":15},{"#":293,"variable":"Speed","value":65},{"#":294,"variable":"Speed","value":30},{"#":295,"variable":"Speed","value":50},{"#":296,"variable":"Speed","value":70},{"#":297,"variable":"Speed","value":30},{"#":298,"variable":"Speed","value":60},{"#":299,"variable":"Speed","value":80},{"#":300,"variable":"Speed","value":85},{"#":301,"variable":"Speed","value":125},{"#":302,"variable":"Speed","value":85},{"#":303,"variable":"Speed","value":65},{"#":304,"variable":"Speed","value":40},{"#":305,"variable":"Speed","value":50},{"#":306,"variable":"Speed","value":80},{"#":307,"variable":"Speed","value":100},{"#":308,"variable":"Speed","value":65},{"#":309,"variable":"Speed","value":60},{"#":310,"variable":"Speed","value":35},{"#":311,"variable":"Speed","value":70},{"#":312,"variable":"Speed","value":30},{"#":313,"variable":"Speed","value":90},{"#":314,"variable":"Speed","value":100},{"#":315,"variable":"Speed","value":40},{"#":316,"variable":"Speed","value":160},{"#":317,"variable":"Speed","value":40},{"#":318,"variable":"Speed","value":28},{"#":319,"variable":"Speed","value":48},{"#":320,"variable":"Speed","value":68},{"#":321,"variable":"Speed","value":25},{"#":322,"variable":"Speed","value":50},{"#":323,"variable":"Speed","value":20},{"#":324,"variable":"Speed","value":30},{"#":325,"variable":"Speed","value":50},{"#":326,"variable":"Speed","value":70},{"#":327,"variable":"Speed","value":50},{"#":328,"variable":"Speed","value":20},{"#":329,"variable":"Speed","value":50},{"#":330,"variable":"Speed","value":50},{"#":331,"variable":"Speed","value":30},{"#":332,"variable":"Speed","value":40},{"#":333,"variable":"Speed","value":50},{"#":334,"variable":"Speed","value":50},{"#":335,"variable":"Speed","value":60},{"#":336,"variable":"Speed","value":80},{"#":337,"variable":"Speed","value":100},{"#":338,"variable":"Speed","value":65},{"#":339,"variable":"Speed","value":105},{"#":340,"variable":"Speed","value":135},{"#":341,"variable":"Speed","value":95},{"#":342,"variable":"Speed","value":95},{"#":343,"variable":"Speed","value":85},{"#":344,"variable":"Speed","value":85},{"#":345,"variable":"Speed","value":65},{"#":346,"variable":"Speed","value":40},{"#":347,"variable":"Speed","value":55},{"#":348,"variable":"Speed","value":65},{"#":349,"variable":"Speed","value":95},{"#":350,"variable":"Speed","value":105},{"#":351,"variable":"Speed","value":60},{"#":352,"variable":"Speed","value":60},{"#":353,"variable":"Speed","value":35},{"#":354,"variable":"Speed","value":40},{"#":355,"variable":"Speed","value":20},{"#":356,"variable":"Speed","value":20},{"#":357,"variable":"Speed","value":60},{"#":358,"variable":"Speed","value":80},{"#":359,"variable":"Speed","value":60},{"#":360,"variable":"Speed","value":10},{"#":361,"variable":"Speed","value":70},{"#":362,"variable":"Speed","value":100},{"#":363,"variable":"Speed","value":35},{"#":364,"variable":"Speed","value":55},{"#":365,"variable":"Speed","value":50},{"#":366,"variable":"Speed","value":80},{"#":367,"variable":"Speed","value":80},{"#":368,"variable":"Speed","value":90},{"#":369,"variable":"Speed","value":65},{"#":370,"variable":"Speed","value":70},{"#":371,"variable":"Speed","value":70},{"#":372,"variable":"Speed","value":60},{"#":373,"variable":"Speed","value":60},{"#":374,"variable":"Speed","value":35},{"#":375,"variable":"Speed","value":55},{"#":376,"variable":"Speed","value":55},{"#":377,"variable":"Speed","value":75},{"#":378,"variable":"Speed","value":23},{"#":379,"variable":"Speed","value":43},{"#":380,"variable":"Speed","value":75},{"#":381,"variable":"Speed","value":45},{"#":382,"variable":"Speed","value":80},{"#":383,"variable":"Speed","value":81},{"#":384,"variable":"Speed","value":70},{"#":385,"variable":"Speed","value":40},{"#":386,"variable":"Speed","value":45},{"#":387,"variable":"Speed","value":65},{"#":388,"variable":"Speed","value":75},{"#":389,"variable":"Speed","value":25},{"#":390,"variable":"Speed","value":25},{"#":391,"variable":"Speed","value":51},{"#":392,"variable":"Speed","value":65},{"#":393,"variable":"Speed","value":75},{"#":394,"variable":"Speed","value":115},{"#":395,"variable":"Speed","value":23},{"#":396,"variable":"Speed","value":50},{"#":397,"variable":"Speed","value":80},{"#":398,"variable":"Speed","value":100},{"#":399,"variable":"Speed","value":25},{"#":400,"variable":"Speed","value":45},{"#":401,"variable":"Speed","value":65},{"#":402,"variable":"Speed","value":32},{"#":403,"variable":"Speed","value":52},{"#":404,"variable":"Speed","value":52},{"#":405,"variable":"Speed","value":55},{"#":406,"variable":"Speed","value":97},{"#":407,"variable":"Speed","value":50},{"#":408,"variable":"Speed","value":50},{"#":409,"variable":"Speed","value":100},{"#":410,"variable":"Speed","value":120},{"#":411,"variable":"Speed","value":30},{"#":412,"variable":"Speed","value":50},{"#":413,"variable":"Speed","value":70},{"#":414,"variable":"Speed","value":110},{"#":415,"variable":"Speed","value":50},{"#":416,"variable":"Speed","value":50},{"#":417,"variable":"Speed","value":50},{"#":418,"variable":"Speed","value":110},{"#":419,"variable":"Speed","value":110},{"#":420,"variable":"Speed","value":110},{"#":421,"variable":"Speed","value":110},{"#":422,"variable":"Speed","value":90},{"#":423,"variable":"Speed","value":90},{"#":424,"variable":"Speed","value":90},{"#":425,"variable":"Speed","value":90},{"#":426,"variable":"Speed","value":95},{"#":427,"variable":"Speed","value":115},{"#":428,"variable":"Speed","value":100},{"#":429,"variable":"Speed","value":150},{"#":430,"variable":"Speed","value":150},{"#":431,"variable":"Speed","value":90},{"#":432,"variable":"Speed","value":180},{"#":433,"variable":"Speed","value":31},{"#":434,"variable":"Speed","value":36},{"#":435,"variable":"Speed","value":56},{"#":436,"variable":"Speed","value":61},{"#":437,"variable":"Speed","value":81},{"#":438,"variable":"Speed","value":108},{"#":439,"variable":"Speed","value":40},{"#":440,"variable":"Speed","value":50},{"#":441,"variable":"Speed","value":60},{"#":442,"variable":"Speed","value":60},{"#":443,"variable":"Speed","value":80},{"#":444,"variable":"Speed","value":100},{"#":445,"variable":"Speed","value":31},{"#":446,"variable":"Speed","value":71},{"#":447,"variable":"Speed","value":25},{"#":448,"variable":"Speed","value":65},{"#":449,"variable":"Speed","value":45},{"#":450,"variable":"Speed","value":60},{"#":451,"variable":"Speed","value":70},{"#":452,"variable":"Speed","value":55},{"#":453,"variable":"Speed","value":90},{"#":454,"variable":"Speed","value":58},{"#":455,"variable":"Speed","value":58},{"#":456,"variable":"Speed","value":30},{"#":457,"variable":"Speed","value":30},{"#":458,"variable":"Speed","value":36},{"#":459,"variable":"Speed","value":36},{"#":460,"variable":"Speed","value":36},{"#":461,"variable":"Speed","value":36},{"#":462,"variable":"Speed","value":66},{"#":463,"variable":"Speed","value":70},{"#":464,"variable":"Speed","value":40},{"#":465,"variable":"Speed","value":95},{"#":466,"variable":"Speed","value":85},{"#":467,"variable":"Speed","value":115},{"#":468,"variable":"Speed","value":35},{"#":469,"variable":"Speed","value":85},{"#":470,"variable":"Speed","value":34},{"#":471,"variable":"Speed","value":39},{"#":472,"variable":"Speed","value":115},{"#":473,"variable":"Speed","value":70},{"#":474,"variable":"Speed","value":80},{"#":475,"variable":"Speed","value":85},{"#":476,"variable":"Speed","value":105},{"#":477,"variable":"Speed","value":135},{"#":478,"variable":"Speed","value":105},{"#":479,"variable":"Speed","value":71},{"#":480,"variable":"Speed","value":85},{"#":481,"variable":"Speed","value":112},{"#":482,"variable":"Speed","value":45},{"#":483,"variable":"Speed","value":74},{"#":484,"variable":"Speed","value":84},{"#":485,"variable":"Speed","value":23},{"#":486,"variable":"Speed","value":33},{"#":487,"variable":"Speed","value":10},{"#":488,"variable":"Speed","value":60},{"#":489,"variable":"Speed","value":30},{"#":490,"variable":"Speed","value":91},{"#":491,"variable":"Speed","value":35},{"#":492,"variable":"Speed","value":42},{"#":493,"variable":"Speed","value":82},{"#":494,"variable":"Speed","value":102},{"#":495,"variable":"Speed","value":92},{"#":496,"variable":"Speed","value":5},{"#":497,"variable":"Speed","value":60},{"#":498,"variable":"Speed","value":90},{"#":499,"variable":"Speed","value":112},{"#":500,"variable":"Speed","value":32},{"#":501,"variable":"Speed","value":47},{"#":502,"variable":"Speed","value":65},{"#":503,"variable":"Speed","value":95},{"#":504,"variable":"Speed","value":50},{"#":505,"variable":"Speed","value":85},{"#":506,"variable":"Speed","value":46},{"#":507,"variable":"Speed","value":66},{"#":508,"variable":"Speed","value":91},{"#":509,"variable":"Speed","value":50},{"#":510,"variable":"Speed","value":40},{"#":511,"variable":"Speed","value":60},{"#":512,"variable":"Speed","value":30},{"#":513,"variable":"Speed","value":125},{"#":514,"variable":"Speed","value":60},{"#":515,"variable":"Speed","value":50},{"#":516,"variable":"Speed","value":40},{"#":517,"variable":"Speed","value":50},{"#":518,"variable":"Speed","value":95},{"#":519,"variable":"Speed","value":83},{"#":520,"variable":"Speed","value":80},{"#":521,"variable":"Speed","value":95},{"#":522,"variable":"Speed","value":95},{"#":523,"variable":"Speed","value":65},{"#":524,"variable":"Speed","value":95},{"#":525,"variable":"Speed","value":80},{"#":526,"variable":"Speed","value":90},{"#":527,"variable":"Speed","value":80},{"#":528,"variable":"Speed","value":110},{"#":529,"variable":"Speed","value":40},{"#":530,"variable":"Speed","value":45},{"#":531,"variable":"Speed","value":110},{"#":532,"variable":"Speed","value":91},{"#":533,"variable":"Speed","value":86},{"#":534,"variable":"Speed","value":86},{"#":535,"variable":"Speed","value":86},{"#":536,"variable":"Speed","value":86},{"#":537,"variable":"Speed","value":86},{"#":538,"variable":"Speed","value":95},{"#":539,"variable":"Speed","value":80},{"#":540,"variable":"Speed","value":115},{"#":541,"variable":"Speed","value":90},{"#":542,"variable":"Speed","value":100},{"#":543,"variable":"Speed","value":77},{"#":544,"variable":"Speed","value":100},{"#":545,"variable":"Speed","value":90},{"#":546,"variable":"Speed","value":90},{"#":547,"variable":"Speed","value":85},{"#":548,"variable":"Speed","value":80},{"#":549,"variable":"Speed","value":100},{"#":550,"variable":"Speed","value":125},{"#":551,"variable":"Speed","value":100},{"#":552,"variable":"Speed","value":127},{"#":553,"variable":"Speed","value":120},{"#":554,"variable":"Speed","value":100},{"#":555,"variable":"Speed","value":63},{"#":556,"variable":"Speed","value":83},{"#":557,"variable":"Speed","value":113},{"#":558,"variable":"Speed","value":45},{"#":559,"variable":"Speed","value":55},{"#":560,"variable":"Speed","value":65},{"#":561,"variable":"Speed","value":45},{"#":562,"variable":"Speed","value":60},{"#":563,"variable":"Speed","value":70},{"#":564,"variable":"Speed","value":42},{"#":565,"variable":"Speed","value":77},{"#":566,"variable":"Speed","value":55},{"#":567,"variable":"Speed","value":60},{"#":568,"variable":"Speed","value":80},{"#":569,"variable":"Speed","value":66},{"#":570,"variable":"Speed","value":106},{"#":571,"variable":"Speed","value":64},{"#":572,"variable":"Speed","value":101},{"#":573,"variable":"Speed","value":64},{"#":574,"variable":"Speed","value":101},{"#":575,"variable":"Speed","value":64},{"#":576,"variable":"Speed","value":101},{"#":577,"variable":"Speed","value":24},{"#":578,"variable":"Speed","value":29},{"#":579,"variable":"Speed","value":43},{"#":580,"variable":"Speed","value":65},{"#":581,"variable":"Speed","value":93},{"#":582,"variable":"Speed","value":76},{"#":583,"variable":"Speed","value":116},{"#":584,"variable":"Speed","value":15},{"#":585,"variable":"Speed","value":20},{"#":586,"variable":"Speed","value":25},{"#":587,"variable":"Speed","value":72},{"#":588,"variable":"Speed","value":114},{"#":589,"variable":"Speed","value":68},{"#":590,"variable":"Speed","value":88},{"#":591,"variable":"Speed","value":50},{"#":592,"variable":"Speed","value":50},{"#":593,"variable":"Speed","value":35},{"#":594,"variable":"Speed","value":40},{"#":595,"variable":"Speed","value":45},{"#":596,"variable":"Speed","value":64},{"#":597,"variable":"Speed","value":69},{"#":598,"variable":"Speed","value":74},{"#":599,"variable":"Speed","value":45},{"#":600,"variable":"Speed","value":85},{"#":601,"variable":"Speed","value":42},{"#":602,"variable":"Speed","value":42},{"#":603,"variable":"Speed","value":92},{"#":604,"variable":"Speed","value":57},{"#":605,"variable":"Speed","value":47},{"#":606,"variable":"Speed","value":112},{"#":607,"variable":"Speed","value":66},{"#":608,"variable":"Speed","value":116},{"#":609,"variable":"Speed","value":30},{"#":610,"variable":"Speed","value":90},{"#":611,"variable":"Speed","value":98},{"#":612,"variable":"Speed","value":65},{"#":613,"variable":"Speed","value":74},{"#":614,"variable":"Speed","value":92},{"#":615,"variable":"Speed","value":50},{"#":616,"variable":"Speed","value":95},{"#":617,"variable":"Speed","value":55},{"#":618,"variable":"Speed","value":60},{"#":619,"variable":"Speed","value":55},{"#":620,"variable":"Speed","value":45},{"#":621,"variable":"Speed","value":48},{"#":622,"variable":"Speed","value":58},{"#":623,"variable":"Speed","value":97},{"#":624,"variable":"Speed","value":30},{"#":625,"variable":"Speed","value":30},{"#":626,"variable":"Speed","value":22},{"#":627,"variable":"Speed","value":32},{"#":628,"variable":"Speed","value":70},{"#":629,"variable":"Speed","value":110},{"#":630,"variable":"Speed","value":65},{"#":631,"variable":"Speed","value":75},{"#":632,"variable":"Speed","value":65},{"#":633,"variable":"Speed","value":105},{"#":634,"variable":"Speed","value":75},{"#":635,"variable":"Speed","value":115},{"#":636,"variable":"Speed","value":45},{"#":637,"variable":"Speed","value":55},{"#":638,"variable":"Speed","value":65},{"#":639,"variable":"Speed","value":20},{"#":640,"variable":"Speed","value":30},{"#":641,"variable":"Speed","value":30},{"#":642,"variable":"Speed","value":55},{"#":643,"variable":"Speed","value":98},{"#":644,"variable":"Speed","value":44},{"#":645,"variable":"Speed","value":59},{"#":646,"variable":"Speed","value":79},{"#":647,"variable":"Speed","value":75},{"#":648,"variable":"Speed","value":95},{"#":649,"variable":"Speed","value":103},{"#":650,"variable":"Speed","value":60},{"#":651,"variable":"Speed","value":20},{"#":652,"variable":"Speed","value":15},{"#":653,"variable":"Speed","value":30},{"#":654,"variable":"Speed","value":40},{"#":655,"variable":"Speed","value":60},{"#":656,"variable":"Speed","value":65},{"#":657,"variable":"Speed","value":65},{"#":658,"variable":"Speed","value":108},{"#":659,"variable":"Speed","value":10},{"#":660,"variable":"Speed","value":20},{"#":661,"variable":"Speed","value":30},{"#":662,"variable":"Speed","value":50},{"#":663,"variable":"Speed","value":90},{"#":664,"variable":"Speed","value":60},{"#":665,"variable":"Speed","value":40},{"#":666,"variable":"Speed","value":50},{"#":667,"variable":"Speed","value":30},{"#":668,"variable":"Speed","value":40},{"#":669,"variable":"Speed","value":20},{"#":670,"variable":"Speed","value":55},{"#":671,"variable":"Speed","value":80},{"#":672,"variable":"Speed","value":57},{"#":673,"variable":"Speed","value":67},{"#":674,"variable":"Speed","value":97},{"#":675,"variable":"Speed","value":40},{"#":676,"variable":"Speed","value":50},{"#":677,"variable":"Speed","value":105},{"#":678,"variable":"Speed","value":25},{"#":679,"variable":"Speed","value":145},{"#":680,"variable":"Speed","value":32},{"#":681,"variable":"Speed","value":65},{"#":682,"variable":"Speed","value":105},{"#":683,"variable":"Speed","value":48},{"#":684,"variable":"Speed","value":35},{"#":685,"variable":"Speed","value":55},{"#":686,"variable":"Speed","value":60},{"#":687,"variable":"Speed","value":70},{"#":688,"variable":"Speed","value":55},{"#":689,"variable":"Speed","value":60},{"#":690,"variable":"Speed","value":80},{"#":691,"variable":"Speed","value":60},{"#":692,"variable":"Speed","value":80},{"#":693,"variable":"Speed","value":65},{"#":694,"variable":"Speed","value":109},{"#":695,"variable":"Speed","value":38},{"#":696,"variable":"Speed","value":58},{"#":697,"variable":"Speed","value":98},{"#":698,"variable":"Speed","value":60},{"#":699,"variable":"Speed","value":100},{"#":700,"variable":"Speed","value":108},{"#":701,"variable":"Speed","value":108},{"#":702,"variable":"Speed","value":108},{"#":703,"variable":"Speed","value":111},{"#":704,"variable":"Speed","value":121},{"#":705,"variable":"Speed","value":111},{"#":706,"variable":"Speed","value":101},{"#":707,"variable":"Speed","value":90},{"#":708,"variable":"Speed","value":90},{"#":709,"variable":"Speed","value":101},{"#":710,"variable":"Speed","value":91},{"#":711,"variable":"Speed","value":95},{"#":712,"variable":"Speed","value":95},{"#":713,"variable":"Speed","value":95},{"#":714,"variable":"Speed","value":108},{"#":715,"variable":"Speed","value":108},{"#":716,"variable":"Speed","value":90},{"#":717,"variable":"Speed","value":128},{"#":718,"variable":"Speed","value":99},{"#":719,"variable":"Speed","value":38},{"#":720,"variable":"Speed","value":57},{"#":721,"variable":"Speed","value":64},{"#":722,"variable":"Speed","value":60},{"#":723,"variable":"Speed","value":73},{"#":724,"variable":"Speed","value":104},{"#":725,"variable":"Speed","value":71},{"#":726,"variable":"Speed","value":97},{"#":727,"variable":"Speed","value":122},{"#":728,"variable":"Speed","value":57},{"#":729,"variable":"Speed","value":78},{"#":730,"variable":"Speed","value":62},{"#":731,"variable":"Speed","value":84},{"#":732,"variable":"Speed","value":126},{"#":733,"variable":"Speed","value":35},{"#":734,"variable":"Speed","value":29},{"#":735,"variable":"Speed","value":89},{"#":736,"variable":"Speed","value":72},{"#":737,"variable":"Speed","value":106},{"#":738,"variable":"Speed","value":42},{"#":739,"variable":"Speed","value":52},{"#":740,"variable":"Speed","value":75},{"#":741,"variable":"Speed","value":52},{"#":742,"variable":"Speed","value":68},{"#":743,"variable":"Speed","value":43},{"#":744,"variable":"Speed","value":58},{"#":745,"variable":"Speed","value":102},{"#":746,"variable":"Speed","value":68},{"#":747,"variable":"Speed","value":104},{"#":748,"variable":"Speed","value":104},{"#":749,"variable":"Speed","value":28},{"#":750,"variable":"Speed","value":35},{"#":751,"variable":"Speed","value":60},{"#":752,"variable":"Speed","value":60},{"#":753,"variable":"Speed","value":23},{"#":754,"variable":"Speed","value":29},{"#":755,"variable":"Speed","value":49},{"#":756,"variable":"Speed","value":72},{"#":757,"variable":"Speed","value":45},{"#":758,"variable":"Speed","value":73},{"#":759,"variable":"Speed","value":50},{"#":760,"variable":"Speed","value":68},{"#":761,"variable":"Speed","value":30},{"#":762,"variable":"Speed","value":44},{"#":763,"variable":"Speed","value":44},{"#":764,"variable":"Speed","value":59},{"#":765,"variable":"Speed","value":70},{"#":766,"variable":"Speed","value":109},{"#":767,"variable":"Speed","value":48},{"#":768,"variable":"Speed","value":71},{"#":769,"variable":"Speed","value":46},{"#":770,"variable":"Speed","value":58},{"#":771,"variable":"Speed","value":60},{"#":772,"variable":"Speed","value":118},{"#":773,"variable":"Speed","value":101},{"#":774,"variable":"Speed","value":50},{"#":775,"variable":"Speed","value":40},{"#":776,"variable":"Speed","value":60},{"#":777,"variable":"Speed","value":80},{"#":778,"variable":"Speed","value":75},{"#":779,"variable":"Speed","value":38},{"#":780,"variable":"Speed","value":56},{"#":781,"variable":"Speed","value":51},{"#":782,"variable":"Speed","value":56},{"#":783,"variable":"Speed","value":46},{"#":784,"variable":"Speed","value":41},{"#":785,"variable":"Speed","value":84},{"#":786,"variable":"Speed","value":99},{"#":787,"variable":"Speed","value":69},{"#":788,"variable":"Speed","value":54},{"#":789,"variable":"Speed","value":28},{"#":790,"variable":"Speed","value":28},{"#":791,"variable":"Speed","value":55},{"#":792,"variable":"Speed","value":123},{"#":793,"variable":"Speed","value":99},{"#":794,"variable":"Speed","value":99},{"#":795,"variable":"Speed","value":95},{"#":796,"variable":"Speed","value":50},{"#":797,"variable":"Speed","value":110},{"#":798,"variable":"Speed","value":70},{"#":799,"variable":"Speed","value":80},{"#":800,"variable":"Speed","value":70},{"#":1,"variable":"Defense","value":49},{"#":2,"variable":"Defense","value":63},{"#":3,"variable":"Defense","value":83},{"#":4,"variable":"Defense","value":123},{"#":5,"variable":"Defense","value":43},{"#":6,"variable":"Defense","value":58},{"#":7,"variable":"Defense","value":78},{"#":8,"variable":"Defense","value":111},{"#":9,"variable":"Defense","value":78},{"#":10,"variable":"Defense","value":65},{"#":11,"variable":"Defense","value":80},{"#":12,"variable":"Defense","value":100},{"#":13,"variable":"Defense","value":120},{"#":14,"variable":"Defense","value":35},{"#":15,"variable":"Defense","value":55},{"#":16,"variable":"Defense","value":50},{"#":17,"variable":"Defense","value":30},{"#":18,"variable":"Defense","value":50},{"#":19,"variable":"Defense","value":40},{"#":20,"variable":"Defense","value":40},{"#":21,"variable":"Defense","value":40},{"#":22,"variable":"Defense","value":55},{"#":23,"variable":"Defense","value":75},{"#":24,"variable":"Defense","value":80},{"#":25,"variable":"Defense","value":35},{"#":26,"variable":"Defense","value":60},{"#":27,"variable":"Defense","value":30},{"#":28,"variable":"Defense","value":65},{"#":29,"variable":"Defense","value":44},{"#":30,"variable":"Defense","value":69},{"#":31,"variable":"Defense","value":40},{"#":32,"variable":"Defense","value":55},{"#":33,"variable":"Defense","value":85},{"#":34,"variable":"Defense","value":110},{"#":35,"variable":"Defense","value":52},{"#":36,"variable":"Defense","value":67},{"#":37,"variable":"Defense","value":87},{"#":38,"variable":"Defense","value":40},{"#":39,"variable":"Defense","value":57},{"#":40,"variable":"Defense","value":77},{"#":41,"variable":"Defense","value":48},{"#":42,"variable":"Defense","value":73},{"#":43,"variable":"Defense","value":40},{"#":44,"variable":"Defense","value":75},{"#":45,"variable":"Defense","value":20},{"#":46,"variable":"Defense","value":45},{"#":47,"variable":"Defense","value":35},{"#":48,"variable":"Defense","value":70},{"#":49,"variable":"Defense","value":55},{"#":50,"variable":"Defense","value":70},{"#":51,"variable":"Defense","value":85},{"#":52,"variable":"Defense","value":55},{"#":53,"variable":"Defense","value":80},{"#":54,"variable":"Defense","value":50},{"#":55,"variable":"Defense","value":60},{"#":56,"variable":"Defense","value":25},{"#":57,"variable":"Defense","value":50},{"#":58,"variable":"Defense","value":35},{"#":59,"variable":"Defense","value":60},{"#":60,"variable":"Defense","value":48},{"#":61,"variable":"Defense","value":78},{"#":62,"variable":"Defense","value":35},{"#":63,"variable":"Defense","value":60},{"#":64,"variable":"Defense","value":45},{"#":65,"variable":"Defense","value":80},{"#":66,"variable":"Defense","value":40},{"#":67,"variable":"Defense","value":65},{"#":68,"variable":"Defense","value":95},{"#":69,"variable":"Defense","value":15},{"#":70,"variable":"Defense","value":30},{"#":71,"variable":"Defense","value":45},{"#":72,"variable":"Defense","value":65},{"#":73,"variable":"Defense","value":50},{"#":74,"variable":"Defense","value":70},{"#":75,"variable":"Defense","value":80},{"#":76,"variable":"Defense","value":35},{"#":77,"variable":"Defense","value":50},{"#":78,"variable":"Defense","value":65},{"#":79,"variable":"Defense","value":35},{"#":80,"variable":"Defense","value":65},{"#":81,"variable":"Defense","value":100},{"#":82,"variable":"Defense","value":115},{"#":83,"variable":"Defense","value":130},{"#":84,"variable":"Defense","value":55},{"#":85,"variable":"Defense","value":70},{"#":86,"variable":"Defense","value":65},{"#":87,"variable":"Defense","value":110},{"#":88,"variable":"Defense","value":180},{"#":89,"variable":"Defense","value":70},{"#":90,"variable":"Defense","value":95},{"#":91,"variable":"Defense","value":55},{"#":92,"variable":"Defense","value":45},{"#":93,"variable":"Defense","value":70},{"#":94,"variable":"Defense","value":55},{"#":95,"variable":"Defense","value":80},{"#":96,"variable":"Defense","value":50},{"#":97,"variable":"Defense","value":75},{"#":98,"variable":"Defense","value":100},{"#":99,"variable":"Defense","value":180},{"#":100,"variable":"Defense","value":30},{"#":101,"variable":"Defense","value":45},{"#":102,"variable":"Defense","value":60},{"#":103,"variable":"Defense","value":80},{"#":104,"variable":"Defense","value":160},{"#":105,"variable":"Defense","value":45},{"#":106,"variable":"Defense","value":70},{"#":107,"variable":"Defense","value":90},{"#":108,"variable":"Defense","value":115},{"#":109,"variable":"Defense","value":50},{"#":110,"variable":"Defense","value":70},{"#":111,"variable":"Defense","value":80},{"#":112,"variable":"Defense","value":85},{"#":113,"variable":"Defense","value":95},{"#":114,"variable":"Defense","value":110},{"#":115,"variable":"Defense","value":53},{"#":116,"variable":"Defense","value":79},{"#":117,"variable":"Defense","value":75},{"#":118,"variable":"Defense","value":95},{"#":119,"variable":"Defense","value":120},{"#":120,"variable":"Defense","value":95},{"#":121,"variable":"Defense","value":120},{"#":122,"variable":"Defense","value":5},{"#":123,"variable":"Defense","value":115},{"#":124,"variable":"Defense","value":80},{"#":125,"variable":"Defense","value":100},{"#":126,"variable":"Defense","value":70},{"#":127,"variable":"Defense","value":95},{"#":128,"variable":"Defense","value":60},{"#":129,"variable":"Defense","value":65},{"#":130,"variable":"Defense","value":55},{"#":131,"variable":"Defense","value":85},{"#":132,"variable":"Defense","value":65},{"#":133,"variable":"Defense","value":80},{"#":134,"variable":"Defense","value":35},{"#":135,"variable":"Defense","value":57},{"#":136,"variable":"Defense","value":57},{"#":137,"variable":"Defense","value":100},{"#":138,"variable":"Defense","value":120},{"#":139,"variable":"Defense","value":95},{"#":140,"variable":"Defense","value":55},{"#":141,"variable":"Defense","value":79},{"#":142,"variable":"Defense","value":109},{"#":143,"variable":"Defense","value":80},{"#":144,"variable":"Defense","value":48},{"#":145,"variable":"Defense","value":50},{"#":146,"variable":"Defense","value":60},{"#":147,"variable":"Defense","value":60},{"#":148,"variable":"Defense","value":60},{"#":149,"variable":"Defense","value":70},{"#":150,"variable":"Defense","value":100},{"#":151,"variable":"Defense","value":125},{"#":152,"variable":"Defense","value":90},{"#":153,"variable":"Defense","value":105},{"#":154,"variable":"Defense","value":65},{"#":155,"variable":"Defense","value":85},{"#":156,"variable":"Defense","value":65},{"#":157,"variable":"Defense","value":100},{"#":158,"variable":"Defense","value":85},{"#":159,"variable":"Defense","value":90},{"#":160,"variable":"Defense","value":45},{"#":161,"variable":"Defense","value":65},{"#":162,"variable":"Defense","value":95},{"#":163,"variable":"Defense","value":90},{"#":164,"variable":"Defense","value":100},{"#":165,"variable":"Defense","value":70},{"#":166,"variable":"Defense","value":100},{"#":167,"variable":"Defense","value":65},{"#":168,"variable":"Defense","value":80},{"#":169,"variable":"Defense","value":100},{"#":170,"variable":"Defense","value":43},{"#":171,"variable":"Defense","value":58},{"#":172,"variable":"Defense","value":78},{"#":173,"variable":"Defense","value":64},{"#":174,"variable":"Defense","value":80},{"#":175,"variable":"Defense","value":100},{"#":176,"variable":"Defense","value":34},{"#":177,"variable":"Defense","value":64},{"#":178,"variable":"Defense","value":30},{"#":179,"variable":"Defense","value":50},{"#":180,"variable":"Defense","value":30},{"#":181,"variable":"Defense","value":50},{"#":182,"variable":"Defense","value":40},{"#":183,"variable":"Defense","value":70},{"#":184,"variable":"Defense","value":80},{"#":185,"variable":"Defense","value":38},{"#":186,"variable":"Defense","value":58},{"#":187,"variable":"Defense","value":15},{"#":188,"variable":"Defense","value":28},{"#":189,"variable":"Defense","value":15},{"#":190,"variable":"Defense","value":65},{"#":191,"variable":"Defense","value":85},{"#":192,"variable":"Defense","value":45},{"#":193,"variable":"Defense","value":70},{"#":194,"variable":"Defense","value":40},{"#":195,"variable":"Defense","value":55},{"#":196,"variable":"Defense","value":85},{"#":197,"variable":"Defense","value":105},{"#":198,"variable":"Defense","value":95},{"#":199,"variable":"Defense","value":50},{"#":200,"variable":"Defense","value":80},{"#":201,"variable":"Defense","value":115},{"#":202,"variable":"Defense","value":75},{"#":203,"variable":"Defense","value":40},{"#":204,"variable":"Defense","value":50},{"#":205,"variable":"Defense","value":70},{"#":206,"variable":"Defense","value":55},{"#":207,"variable":"Defense","value":30},{"#":208,"variable":"Defense","value":55},{"#":209,"variable":"Defense","value":45},{"#":210,"variable":"Defense","value":45},{"#":211,"variable":"Defense","value":85},{"#":212,"variable":"Defense","value":60},{"#":213,"variable":"Defense","value":110},{"#":214,"variable":"Defense","value":42},{"#":215,"variable":"Defense","value":80},{"#":216,"variable":"Defense","value":60},{"#":217,"variable":"Defense","value":48},{"#":218,"variable":"Defense","value":58},{"#":219,"variable":"Defense","value":65},{"#":220,"variable":"Defense","value":90},{"#":221,"variable":"Defense","value":140},{"#":222,"variable":"Defense","value":70},{"#":223,"variable":"Defense","value":105},{"#":224,"variable":"Defense","value":200},{"#":225,"variable":"Defense","value":230},{"#":226,"variable":"Defense","value":50},{"#":227,"variable":"Defense","value":75},{"#":228,"variable":"Defense","value":75},{"#":229,"variable":"Defense","value":100},{"#":230,"variable":"Defense","value":140},{"#":231,"variable":"Defense","value":230},{"#":232,"variable":"Defense","value":75},{"#":233,"variable":"Defense","value":115},{"#":234,"variable":"Defense","value":55},{"#":235,"variable":"Defense","value":50},{"#":236,"variable":"Defense","value":75},{"#":237,"variable":"Defense","value":40},{"#":238,"variable":"Defense","value":120},{"#":239,"variable":"Defense","value":40},{"#":240,"variable":"Defense","value":80},{"#":241,"variable":"Defense","value":85},{"#":242,"variable":"Defense","value":35},{"#":243,"variable":"Defense","value":75},{"#":244,"variable":"Defense","value":45},{"#":245,"variable":"Defense","value":70},{"#":246,"variable":"Defense","value":140},{"#":247,"variable":"Defense","value":30},{"#":248,"variable":"Defense","value":50},{"#":249,"variable":"Defense","value":90},{"#":250,"variable":"Defense","value":95},{"#":251,"variable":"Defense","value":60},{"#":252,"variable":"Defense","value":120},{"#":253,"variable":"Defense","value":90},{"#":254,"variable":"Defense","value":62},{"#":255,"variable":"Defense","value":35},{"#":256,"variable":"Defense","value":35},{"#":257,"variable":"Defense","value":95},{"#":258,"variable":"Defense","value":15},{"#":259,"variable":"Defense","value":37},{"#":260,"variable":"Defense","value":37},{"#":261,"variable":"Defense","value":105},{"#":262,"variable":"Defense","value":10},{"#":263,"variable":"Defense","value":75},{"#":264,"variable":"Defense","value":85},{"#":265,"variable":"Defense","value":115},{"#":266,"variable":"Defense","value":50},{"#":267,"variable":"Defense","value":70},{"#":268,"variable":"Defense","value":110},{"#":269,"variable":"Defense","value":150},{"#":270,"variable":"Defense","value":130},{"#":271,"variable":"Defense","value":90},{"#":272,"variable":"Defense","value":100},{"#":273,"variable":"Defense","value":35},{"#":274,"variable":"Defense","value":45},{"#":275,"variable":"Defense","value":65},{"#":276,"variable":"Defense","value":75},{"#":277,"variable":"Defense","value":40},{"#":278,"variable":"Defense","value":60},{"#":279,"variable":"Defense","value":70},{"#":280,"variable":"Defense","value":80},{"#":281,"variable":"Defense","value":50},{"#":282,"variable":"Defense","value":70},{"#":283,"variable":"Defense","value":90},{"#":284,"variable":"Defense","value":110},{"#":285,"variable":"Defense","value":35},{"#":286,"variable":"Defense","value":70},{"#":287,"variable":"Defense","value":41},{"#":288,"variable":"Defense","value":61},{"#":289,"variable":"Defense","value":35},{"#":290,"variable":"Defense","value":55},{"#":291,"variable":"Defense","value":50},{"#":292,"variable":"Defense","value":55},{"#":293,"variable":"Defense","value":70},{"#":294,"variable":"Defense","value":30},{"#":295,"variable":"Defense","value":50},{"#":296,"variable":"Defense","value":70},{"#":297,"variable":"Defense","value":50},{"#":298,"variable":"Defense","value":40},{"#":299,"variable":"Defense","value":60},{"#":300,"variable":"Defense","value":30},{"#":301,"variable":"Defense","value":60},{"#":302,"variable":"Defense","value":30},{"#":303,"variable":"Defense","value":100},{"#":304,"variable":"Defense","value":25},{"#":305,"variable":"Defense","value":35},{"#":306,"variable":"Defense","value":65},{"#":307,"variable":"Defense","value":65},{"#":308,"variable":"Defense","value":32},{"#":309,"variable":"Defense","value":62},{"#":310,"variable":"Defense","value":60},{"#":311,"variable":"Defense","value":80},{"#":312,"variable":"Defense","value":60},{"#":313,"variable":"Defense","value":80},{"#":314,"variable":"Defense","value":100},{"#":315,"variable":"Defense","value":90},{"#":316,"variable":"Defense","value":45},{"#":317,"variable":"Defense","value":45},{"#":318,"variable":"Defense","value":23},{"#":319,"variable":"Defense","value":43},{"#":320,"variable":"Defense","value":63},{"#":321,"variable":"Defense","value":30},{"#":322,"variable":"Defense","value":60},{"#":323,"variable":"Defense","value":40},{"#":324,"variable":"Defense","value":135},{"#":325,"variable":"Defense","value":45},{"#":326,"variable":"Defense","value":65},{"#":327,"variable":"Defense","value":75},{"#":328,"variable":"Defense","value":125},{"#":329,"variable":"Defense","value":85},{"#":330,"variable":"Defense","value":125},{"#":331,"variable":"Defense","value":100},{"#":332,"variable":"Defense","value":140},{"#":333,"variable":"Defense","value":180},{"#":334,"variable":"Defense","value":230},{"#":335,"variable":"Defense","value":55},{"#":336,"variable":"Defense","value":75},{"#":337,"variable":"Defense","value":85},{"#":338,"variable":"Defense","value":40},{"#":339,"variable":"Defense","value":60},{"#":340,"variable":"Defense","value":80},{"#":341,"variable":"Defense","value":40},{"#":342,"variable":"Defense","value":50},{"#":343,"variable":"Defense","value":55},{"#":344,"variable":"Defense","value":55},{"#":345,"variable":"Defense","value":45},{"#":346,"variable":"Defense","value":53},{"#":347,"variable":"Defense","value":83},{"#":348,"variable":"Defense","value":20},{"#":349,"variable":"Defense","value":40},{"#":350,"variable":"Defense","value":70},{"#":351,"variable":"Defense","value":35},{"#":352,"variable":"Defense","value":45},{"#":353,"variable":"Defense","value":40},{"#":354,"variable":"Defense","value":70},{"#":355,"variable":"Defense","value":100},{"#":356,"variable":"Defense","value":140},{"#":357,"variable":"Defense","value":35},{"#":358,"variable":"Defense","value":65},{"#":359,"variable":"Defense","value":60},{"#":360,"variable":"Defense","value":45},{"#":361,"variable":"Defense","value":50},{"#":362,"variable":"Defense","value":80},{"#":363,"variable":"Defense","value":40},{"#":364,"variable":"Defense","value":60},{"#":365,"variable":"Defense","value":60},{"#":366,"variable":"Defense","value":90},{"#":367,"variable":"Defense","value":110},{"#":368,"variable":"Defense","value":60},{"#":369,"variable":"Defense","value":60},{"#":370,"variable":"Defense","value":65},{"#":371,"variable":"Defense","value":85},{"#":372,"variable":"Defense","value":43},{"#":373,"variable":"Defense","value":73},{"#":374,"variable":"Defense","value":65},{"#":375,"variable":"Defense","value":85},{"#":376,"variable":"Defense","value":55},{"#":377,"variable":"Defense","value":105},{"#":378,"variable":"Defense","value":77},{"#":379,"variable":"Defense","value":97},{"#":380,"variable":"Defense","value":50},{"#":381,"variable":"Defense","value":100},{"#":382,"variable":"Defense","value":20},{"#":383,"variable":"Defense","value":79},{"#":384,"variable":"Defense","value":70},{"#":385,"variable":"Defense","value":70},{"#":386,"variable":"Defense","value":35},{"#":387,"variable":"Defense","value":65},{"#":388,"variable":"Defense","value":75},{"#":389,"variable":"Defense","value":90},{"#":390,"variable":"Defense","value":130},{"#":391,"variable":"Defense","value":83},{"#":392,"variable":"Defense","value":70},{"#":393,"variable":"Defense","value":60},{"#":394,"variable":"Defense","value":60},{"#":395,"variable":"Defense","value":48},{"#":396,"variable":"Defense","value":50},{"#":397,"variable":"Defense","value":80},{"#":398,"variable":"Defense","value":80},{"#":399,"variable":"Defense","value":50},{"#":400,"variable":"Defense","value":70},{"#":401,"variable":"Defense","value":90},{"#":402,"variable":"Defense","value":85},{"#":403,"variable":"Defense","value":105},{"#":404,"variable":"Defense","value":105},{"#":405,"variable":"Defense","value":130},{"#":406,"variable":"Defense","value":55},{"#":407,"variable":"Defense","value":60},{"#":408,"variable":"Defense","value":100},{"#":409,"variable":"Defense","value":80},{"#":410,"variable":"Defense","value":130},{"#":411,"variable":"Defense","value":80},{"#":412,"variable":"Defense","value":100},{"#":413,"variable":"Defense","value":130},{"#":414,"variable":"Defense","value":150},{"#":415,"variable":"Defense","value":200},{"#":416,"variable":"Defense","value":100},{"#":417,"variable":"Defense","value":150},{"#":418,"variable":"Defense","value":90},{"#":419,"variable":"Defense","value":120},{"#":420,"variable":"Defense","value":80},{"#":421,"variable":"Defense","value":100},{"#":422,"variable":"Defense","value":90},{"#":423,"variable":"Defense","value":90},{"#":424,"variable":"Defense","value":140},{"#":425,"variable":"Defense","value":160},{"#":426,"variable":"Defense","value":90},{"#":427,"variable":"Defense","value":100},{"#":428,"variable":"Defense","value":100},{"#":429,"variable":"Defense","value":50},{"#":430,"variable":"Defense","value":20},{"#":431,"variable":"Defense","value":160},{"#":432,"variable":"Defense","value":90},{"#":433,"variable":"Defense","value":64},{"#":434,"variable":"Defense","value":85},{"#":435,"variable":"Defense","value":105},{"#":436,"variable":"Defense","value":44},{"#":437,"variable":"Defense","value":52},{"#":438,"variable":"Defense","value":71},{"#":439,"variable":"Defense","value":53},{"#":440,"variable":"Defense","value":68},{"#":441,"variable":"Defense","value":88},{"#":442,"variable":"Defense","value":30},{"#":443,"variable":"Defense","value":50},{"#":444,"variable":"Defense","value":70},{"#":445,"variable":"Defense","value":40},{"#":446,"variable":"Defense","value":60},{"#":447,"variable":"Defense","value":41},{"#":448,"variable":"Defense","value":51},{"#":449,"variable":"Defense","value":34},{"#":450,"variable":"Defense","value":49},{"#":451,"variable":"Defense","value":79},{"#":452,"variable":"Defense","value":35},{"#":453,"variable":"Defense","value":65},{"#":454,"variable":"Defense","value":40},{"#":455,"variable":"Defense","value":60},{"#":456,"variable":"Defense","value":118},{"#":457,"variable":"Defense","value":168},{"#":458,"variable":"Defense","value":45},{"#":459,"variable":"Defense","value":85},{"#":460,"variable":"Defense","value":105},{"#":461,"variable":"Defense","value":95},{"#":462,"variable":"Defense","value":50},{"#":463,"variable":"Defense","value":42},{"#":464,"variable":"Defense","value":102},{"#":465,"variable":"Defense","value":70},{"#":466,"variable":"Defense","value":35},{"#":467,"variable":"Defense","value":55},{"#":468,"variable":"Defense","value":45},{"#":469,"variable":"Defense","value":70},{"#":470,"variable":"Defense","value":48},{"#":471,"variable":"Defense","value":68},{"#":472,"variable":"Defense","value":66},{"#":473,"variable":"Defense","value":34},{"#":474,"variable":"Defense","value":44},{"#":475,"variable":"Defense","value":44},{"#":476,"variable":"Defense","value":84},{"#":477,"variable":"Defense","value":94},{"#":478,"variable":"Defense","value":60},{"#":479,"variable":"Defense","value":52},{"#":480,"variable":"Defense","value":42},{"#":481,"variable":"Defense","value":64},{"#":482,"variable":"Defense","value":50},{"#":483,"variable":"Defense","value":47},{"#":484,"variable":"Defense","value":67},{"#":485,"variable":"Defense","value":86},{"#":486,"variable":"Defense","value":116},{"#":487,"variable":"Defense","value":95},{"#":488,"variable":"Defense","value":45},{"#":489,"variable":"Defense","value":5},{"#":490,"variable":"Defense","value":45},{"#":491,"variable":"Defense","value":108},{"#":492,"variable":"Defense","value":45},{"#":493,"variable":"Defense","value":65},{"#":494,"variable":"Defense","value":95},{"#":495,"variable":"Defense","value":115},{"#":496,"variable":"Defense","value":40},{"#":497,"variable":"Defense","value":40},{"#":498,"variable":"Defense","value":70},{"#":499,"variable":"Defense","value":88},{"#":500,"variable":"Defense","value":78},{"#":501,"variable":"Defense","value":118},{"#":502,"variable":"Defense","value":90},{"#":503,"variable":"Defense","value":110},{"#":504,"variable":"Defense","value":40},{"#":505,"variable":"Defense","value":65},{"#":506,"variable":"Defense","value":72},{"#":507,"variable":"Defense","value":56},{"#":508,"variable":"Defense","value":76},{"#":509,"variable":"Defense","value":50},{"#":510,"variable":"Defense","value":50},{"#":511,"variable":"Defense","value":75},{"#":512,"variable":"Defense","value":105},{"#":513,"variable":"Defense","value":65},{"#":514,"variable":"Defense","value":115},{"#":515,"variable":"Defense","value":95},{"#":516,"variable":"Defense","value":130},{"#":517,"variable":"Defense","value":125},{"#":518,"variable":"Defense","value":67},{"#":519,"variable":"Defense","value":67},{"#":520,"variable":"Defense","value":95},{"#":521,"variable":"Defense","value":86},{"#":522,"variable":"Defense","value":130},{"#":523,"variable":"Defense","value":110},{"#":524,"variable":"Defense","value":125},{"#":525,"variable":"Defense","value":80},{"#":526,"variable":"Defense","value":70},{"#":527,"variable":"Defense","value":65},{"#":528,"variable":"Defense","value":95},{"#":529,"variable":"Defense","value":145},{"#":530,"variable":"Defense","value":135},{"#":531,"variable":"Defense","value":70},{"#":532,"variable":"Defense","value":77},{"#":533,"variable":"Defense","value":107},{"#":534,"variable":"Defense","value":107},{"#":535,"variable":"Defense","value":107},{"#":536,"variable":"Defense","value":107},{"#":537,"variable":"Defense","value":107},{"#":538,"variable":"Defense","value":130},{"#":539,"variable":"Defense","value":105},{"#":540,"variable":"Defense","value":70},{"#":541,"variable":"Defense","value":120},{"#":542,"variable":"Defense","value":100},{"#":543,"variable":"Defense","value":106},{"#":544,"variable":"Defense","value":110},{"#":545,"variable":"Defense","value":120},{"#":546,"variable":"Defense","value":100},{"#":547,"variable":"Defense","value":120},{"#":548,"variable":"Defense","value":80},{"#":549,"variable":"Defense","value":100},{"#":550,"variable":"Defense","value":90},{"#":551,"variable":"Defense","value":100},{"#":552,"variable":"Defense","value":75},{"#":553,"variable":"Defense","value":120},{"#":554,"variable":"Defense","value":100},{"#":555,"variable":"Defense","value":55},{"#":556,"variable":"Defense","value":75},{"#":557,"variable":"Defense","value":95},{"#":558,"variable":"Defense","value":45},{"#":559,"variable":"Defense","value":55},{"#":560,"variable":"Defense","value":65},{"#":561,"variable":"Defense","value":45},{"#":562,"variable":"Defense","value":60},{"#":563,"variable":"Defense","value":85},{"#":564,"variable":"Defense","value":39},{"#":565,"variable":"Defense","value":69},{"#":566,"variable":"Defense","value":45},{"#":567,"variable":"Defense","value":65},{"#":568,"variable":"Defense","value":90},{"#":569,"variable":"Defense","value":37},{"#":570,"variable":"Defense","value":50},{"#":571,"variable":"Defense","value":48},{"#":572,"variable":"Defense","value":63},{"#":573,"variable":"Defense","value":48},{"#":574,"variable":"Defense","value":63},{"#":575,"variable":"Defense","value":48},{"#":576,"variable":"Defense","value":63},{"#":577,"variable":"Defense","value":45},{"#":578,"variable":"Defense","value":85},{"#":579,"variable":"Defense","value":50},{"#":580,"variable":"Defense","value":62},{"#":581,"variable":"Defense","value":80},{"#":582,"variable":"Defense","value":32},{"#":583,"variable":"Defense","value":63},{"#":584,"variable":"Defense","value":85},{"#":585,"variable":"Defense","value":105},{"#":586,"variable":"Defense","value":130},{"#":587,"variable":"Defense","value":43},{"#":588,"variable":"Defense","value":55},{"#":589,"variable":"Defense","value":40},{"#":590,"variable":"Defense","value":60},{"#":591,"variable":"Defense","value":86},{"#":592,"variable":"Defense","value":126},{"#":593,"variable":"Defense","value":55},{"#":594,"variable":"Defense","value":85},{"#":595,"variable":"Defense","value":95},{"#":596,"variable":"Defense","value":40},{"#":597,"variable":"Defense","value":55},{"#":598,"variable":"Defense","value":75},{"#":599,"variable":"Defense","value":85},{"#":600,"variable":"Defense","value":75},{"#":601,"variable":"Defense","value":70},{"#":602,"variable":"Defense","value":90},{"#":603,"variable":"Defense","value":80},{"#":604,"variable":"Defense","value":59},{"#":605,"variable":"Defense","value":99},{"#":606,"variable":"Defense","value":89},{"#":607,"variable":"Defense","value":60},{"#":608,"variable":"Defense","value":85},{"#":609,"variable":"Defense","value":50},{"#":610,"variable":"Defense","value":75},{"#":611,"variable":"Defense","value":65},{"#":612,"variable":"Defense","value":35},{"#":613,"variable":"Defense","value":45},{"#":614,"variable":"Defense","value":80},{"#":615,"variable":"Defense","value":45},{"#":616,"variable":"Defense","value":55},{"#":617,"variable":"Defense","value":105},{"#":618,"variable":"Defense","value":67},{"#":619,"variable":"Defense","value":85},{"#":620,"variable":"Defense","value":125},{"#":621,"variable":"Defense","value":70},{"#":622,"variable":"Defense","value":115},{"#":623,"variable":"Defense","value":80},{"#":624,"variable":"Defense","value":85},{"#":625,"variable":"Defense","value":145},{"#":626,"variable":"Defense","value":103},{"#":627,"variable":"Defense","value":133},{"#":628,"variable":"Defense","value":45},{"#":629,"variable":"Defense","value":65},{"#":630,"variable":"Defense","value":62},{"#":631,"variable":"Defense","value":82},{"#":632,"variable":"Defense","value":40},{"#":633,"variable":"Defense","value":60},{"#":634,"variable":"Defense","value":40},{"#":635,"variable":"Defense","value":60},{"#":636,"variable":"Defense","value":50},{"#":637,"variable":"Defense","value":70},{"#":638,"variable":"Defense","value":95},{"#":639,"variable":"Defense","value":40},{"#":640,"variable":"Defense","value":50},{"#":641,"variable":"Defense","value":75},{"#":642,"variable":"Defense","value":50},{"#":643,"variable":"Defense","value":63},{"#":644,"variable":"Defense","value":50},{"#":645,"variable":"Defense","value":65},{"#":646,"variable":"Defense","value":85},{"#":647,"variable":"Defense","value":50},{"#":648,"variable":"Defense","value":70},{"#":649,"variable":"Defense","value":60},{"#":650,"variable":"Defense","value":45},{"#":651,"variable":"Defense","value":105},{"#":652,"variable":"Defense","value":45},{"#":653,"variable":"Defense","value":70},{"#":654,"variable":"Defense","value":50},{"#":655,"variable":"Defense","value":70},{"#":656,"variable":"Defense","value":80},{"#":657,"variable":"Defense","value":50},{"#":658,"variable":"Defense","value":60},{"#":659,"variable":"Defense","value":91},{"#":660,"variable":"Defense","value":131},{"#":661,"variable":"Defense","value":70},{"#":662,"variable":"Defense","value":95},{"#":663,"variable":"Defense","value":115},{"#":664,"variable":"Defense","value":40},{"#":665,"variable":"Defense","value":70},{"#":666,"variable":"Defense","value":80},{"#":667,"variable":"Defense","value":55},{"#":668,"variable":"Defense","value":75},{"#":669,"variable":"Defense","value":55},{"#":670,"variable":"Defense","value":60},{"#":671,"variable":"Defense","value":90},{"#":672,"variable":"Defense","value":60},{"#":673,"variable":"Defense","value":70},{"#":674,"variable":"Defense","value":90},{"#":675,"variable":"Defense","value":40},{"#":676,"variable":"Defense","value":80},{"#":677,"variable":"Defense","value":30},{"#":678,"variable":"Defense","value":85},{"#":679,"variable":"Defense","value":40},{"#":680,"variable":"Defense","value":84},{"#":681,"variable":"Defense","value":50},{"#":682,"variable":"Defense","value":60},{"#":683,"variable":"Defense","value":90},{"#":684,"variable":"Defense","value":50},{"#":685,"variable":"Defense","value":80},{"#":686,"variable":"Defense","value":70},{"#":687,"variable":"Defense","value":100},{"#":688,"variable":"Defense","value":95},{"#":689,"variable":"Defense","value":50},{"#":690,"variable":"Defense","value":75},{"#":691,"variable":"Defense","value":75},{"#":692,"variable":"Defense","value":105},{"#":693,"variable":"Defense","value":66},{"#":694,"variable":"Defense","value":112},{"#":695,"variable":"Defense","value":50},{"#":696,"variable":"Defense","value":70},{"#":697,"variable":"Defense","value":90},{"#":698,"variable":"Defense","value":55},{"#":699,"variable":"Defense","value":65},{"#":700,"variable":"Defense","value":129},{"#":701,"variable":"Defense","value":90},{"#":702,"variable":"Defense","value":72},{"#":703,"variable":"Defense","value":70},{"#":704,"variable":"Defense","value":80},{"#":705,"variable":"Defense","value":70},{"#":706,"variable":"Defense","value":70},{"#":707,"variable":"Defense","value":100},{"#":708,"variable":"Defense","value":120},{"#":709,"variable":"Defense","value":90},{"#":710,"variable":"Defense","value":90},{"#":711,"variable":"Defense","value":90},{"#":712,"variable":"Defense","value":100},{"#":713,"variable":"Defense","value":90},{"#":714,"variable":"Defense","value":90},{"#":715,"variable":"Defense","value":90},{"#":716,"variable":"Defense","value":77},{"#":717,"variable":"Defense","value":90},{"#":718,"variable":"Defense","value":95},{"#":719,"variable":"Defense","value":65},{"#":720,"variable":"Defense","value":95},{"#":721,"variable":"Defense","value":122},{"#":722,"variable":"Defense","value":40},{"#":723,"variable":"Defense","value":58},{"#":724,"variable":"Defense","value":72},{"#":725,"variable":"Defense","value":40},{"#":726,"variable":"Defense","value":52},{"#":727,"variable":"Defense","value":67},{"#":728,"variable":"Defense","value":38},{"#":729,"variable":"Defense","value":77},{"#":730,"variable":"Defense","value":43},{"#":731,"variable":"Defense","value":55},{"#":732,"variable":"Defense","value":71},{"#":733,"variable":"Defense","value":40},{"#":734,"variable":"Defense","value":60},{"#":735,"variable":"Defense","value":50},{"#":736,"variable":"Defense","value":58},{"#":737,"variable":"Defense","value":72},{"#":738,"variable":"Defense","value":39},{"#":739,"variable":"Defense","value":47},{"#":740,"variable":"Defense","value":68},{"#":741,"variable":"Defense","value":48},{"#":742,"variable":"Defense","value":62},{"#":743,"variable":"Defense","value":62},{"#":744,"variable":"Defense","value":78},{"#":745,"variable":"Defense","value":60},{"#":746,"variable":"Defense","value":54},{"#":747,"variable":"Defense","value":76},{"#":748,"variable":"Defense","value":76},{"#":749,"variable":"Defense","value":100},{"#":750,"variable":"Defense","value":150},{"#":751,"variable":"Defense","value":50},{"#":752,"variable":"Defense","value":150},{"#":753,"variable":"Defense","value":60},{"#":754,"variable":"Defense","value":72},{"#":755,"variable":"Defense","value":66},{"#":756,"variable":"Defense","value":86},{"#":757,"variable":"Defense","value":53},{"#":758,"variable":"Defense","value":88},{"#":759,"variable":"Defense","value":67},{"#":760,"variable":"Defense","value":115},{"#":761,"variable":"Defense","value":60},{"#":762,"variable":"Defense","value":90},{"#":763,"variable":"Defense","value":62},{"#":764,"variable":"Defense","value":88},{"#":765,"variable":"Defense","value":33},{"#":766,"variable":"Defense","value":52},{"#":767,"variable":"Defense","value":77},{"#":768,"variable":"Defense","value":119},{"#":769,"variable":"Defense","value":50},{"#":770,"variable":"Defense","value":72},{"#":771,"variable":"Defense","value":65},{"#":772,"variable":"Defense","value":75},{"#":773,"variable":"Defense","value":57},{"#":774,"variable":"Defense","value":150},{"#":775,"variable":"Defense","value":35},{"#":776,"variable":"Defense","value":53},{"#":777,"variable":"Defense","value":70},{"#":778,"variable":"Defense","value":91},{"#":779,"variable":"Defense","value":48},{"#":780,"variable":"Defense","value":76},{"#":781,"variable":"Defense","value":70},{"#":782,"variable":"Defense","value":70},{"#":783,"variable":"Defense","value":70},{"#":784,"variable":"Defense","value":70},{"#":785,"variable":"Defense","value":122},{"#":786,"variable":"Defense","value":122},{"#":787,"variable":"Defense","value":122},{"#":788,"variable":"Defense","value":122},{"#":789,"variable":"Defense","value":85},{"#":790,"variable":"Defense","value":184},{"#":791,"variable":"Defense","value":35},{"#":792,"variable":"Defense","value":80},{"#":793,"variable":"Defense","value":95},{"#":794,"variable":"Defense","value":95},{"#":795,"variable":"Defense","value":121},{"#":796,"variable":"Defense","value":150},{"#":797,"variable":"Defense","value":110},{"#":798,"variable":"Defense","value":60},{"#":799,"variable":"Defense","value":60},{"#":800,"variable":"Defense","value":120}]},"mark":"line","width":600,"height":300,"encoding":{"x":{"field":"#","type":"quantitative"},"y":{"field":"value","type":"quantitative"},"color":{"field":"variable","type":"nominal"}}};
+    vegaEmbed('#uuid-853567ee-d3c2-40da-be8d-aa007164a748', spec, {defaultStyle:true}).catch(console.warn);
+    }, function(err) {
+    console.log('Failed to load');
+  });
+  </script>
+</div>
+  
+
+
+
+Let's look at the operation above:
+
+- `subset-cols`: we use this to, well, subset columns. We can choose N columns by label, we will get a 'new' data-frame with only the selected columns
+- `melt`: this transforms the data-frame from wide to long format (for more info about it see [further below](#reshape)
+- `->clj`: this turns data-frames and serieses to a Clojure vector of maps
+
+`subset-cols` is pretty straightforward:
+
+
+```clojure
+(-> pokemon (pt/subset-cols :Speed :Attack) pt/head show)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Speed</th>
+      <th>Attack</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>45</td>
+      <td>49</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>60</td>
+      <td>62</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>80</td>
+      <td>82</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>80</td>
+      <td>100</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>65</td>
+      <td>52</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+```clojure
+(-> pokemon (pt/subset-cols :Speed :Attack :HP :#) pt/head show)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Speed</th>
+      <th>Attack</th>
+      <th>HP</th>
+      <th>#</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>45</td>
+      <td>49</td>
+      <td>45</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>60</td>
+      <td>62</td>
+      <td>60</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>80</td>
+      <td>82</td>
+      <td>80</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>80</td>
+      <td>100</td>
+      <td>80</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>65</td>
+      <td>52</td>
+      <td>39</td>
+      <td>5</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+```clojure
+(-> pokemon (pt/subset-cols :# :Attack) pt/head)
+```
+
+
+
+
+       #  Attack
+    0  1      49
+    1  2      62
+    2  3      82
+    3  4     100
+    4  5      52
+
+
+
+`->clj` tries to understand what's the better way to transform panthera data structures to Clojure ones
+
+
+```clojure
+(-> pokemon (pt/subset-cols :Speed) pt/head pt/->clj)
+```
+
+
+
+
+    [{:speed 45} {:speed 60} {:speed 80} {:speed 80} {:speed 65}]
+
+
+
+
+```clojure
+(-> pokemon (pt/subset-cols :Speed :HP) pt/head pt/->clj)
+```
+
+
+
+
+    [{:speed 45, :hp 45} {:speed 60, :hp 60} {:speed 80, :hp 80} {:speed 80, :hp 80} {:speed 65, :hp 39}]
+
+
+
+Now we want to see what happens when we plot `Attack` vs `Defense`
+
+
+```clojure
+(defn scatter
+  [data x y & [color]]
+  (let [spec {:data {:values data}
+              :mark "point"
+              :width 600
+              :height 300
+              :encoding {:x {:field x
+                             :type "quantitative"}
+                         :y {:field y
+                             :type "quantitative"}
+                         :color {}}}]
+    (if color
+      (assoc-in spec [:encoding :color] {:field color
+                                         :type "nominal"})
+      (assoc-in spec [:encoding :color] {:value "dodgerblue"}))))
+```
+
+
+
+
+    #'user/scatter
+
+
+
+
+```clojure
+(-> pokemon
+    (pt/subset-cols :Attack :Defense)
+    pt/->clj
+    (scatter :attack :defense)
+    oz/view!)
+```
+
+
+
+
+
+<div>
+  <div id='uuid-85a89b06-c06f-4b16-8b44-614ab74174ff'></div>
+  <script>
+  requirejs.config({
+    baseUrl: 'https://cdn.jsdelivr.net/npm/',
+    paths: {
+      'vega-embed':  'vega-embed@3?noext',
+      'vega-lib': 'vega-lib?noext',
+      'vega-lite': 'vega-lite@2?noext',
+      'vega': 'vega@3?noext'
+    }
+  });
+  require(['vega-embed'], function(vegaEmbed) {
+    let spec = {"data":{"values":[{"attack":49,"defense":49},{"attack":62,"defense":63},{"attack":82,"defense":83},{"attack":100,"defense":123},{"attack":52,"defense":43},{"attack":64,"defense":58},{"attack":84,"defense":78},{"attack":130,"defense":111},{"attack":104,"defense":78},{"attack":48,"defense":65},{"attack":63,"defense":80},{"attack":83,"defense":100},{"attack":103,"defense":120},{"attack":30,"defense":35},{"attack":20,"defense":55},{"attack":45,"defense":50},{"attack":35,"defense":30},{"attack":25,"defense":50},{"attack":90,"defense":40},{"attack":150,"defense":40},{"attack":45,"defense":40},{"attack":60,"defense":55},{"attack":80,"defense":75},{"attack":80,"defense":80},{"attack":56,"defense":35},{"attack":81,"defense":60},{"attack":60,"defense":30},{"attack":90,"defense":65},{"attack":60,"defense":44},{"attack":85,"defense":69},{"attack":55,"defense":40},{"attack":90,"defense":55},{"attack":75,"defense":85},{"attack":100,"defense":110},{"attack":47,"defense":52},{"attack":62,"defense":67},{"attack":92,"defense":87},{"attack":57,"defense":40},{"attack":72,"defense":57},{"attack":102,"defense":77},{"attack":45,"defense":48},{"attack":70,"defense":73},{"attack":41,"defense":40},{"attack":76,"defense":75},{"attack":45,"defense":20},{"attack":70,"defense":45},{"attack":45,"defense":35},{"attack":80,"defense":70},{"attack":50,"defense":55},{"attack":65,"defense":70},{"attack":80,"defense":85},{"attack":70,"defense":55},{"attack":95,"defense":80},{"attack":55,"defense":50},{"attack":65,"defense":60},{"attack":55,"defense":25},{"attack":80,"defense":50},{"attack":45,"defense":35},{"attack":70,"defense":60},{"attack":52,"defense":48},{"attack":82,"defense":78},{"attack":80,"defense":35},{"attack":105,"defense":60},{"attack":70,"defense":45},{"attack":110,"defense":80},{"attack":50,"defense":40},{"attack":65,"defense":65},{"attack":95,"defense":95},{"attack":20,"defense":15},{"attack":35,"defense":30},{"attack":50,"defense":45},{"attack":50,"defense":65},{"attack":80,"defense":50},{"attack":100,"defense":70},{"attack":130,"defense":80},{"attack":75,"defense":35},{"attack":90,"defense":50},{"attack":105,"defense":65},{"attack":40,"defense":35},{"attack":70,"defense":65},{"attack":80,"defense":100},{"attack":95,"defense":115},{"attack":120,"defense":130},{"attack":85,"defense":55},{"attack":100,"defense":70},{"attack":65,"defense":65},{"attack":75,"defense":110},{"attack":75,"defense":180},{"attack":35,"defense":70},{"attack":60,"defense":95},{"attack":65,"defense":55},{"attack":85,"defense":45},{"attack":110,"defense":70},{"attack":45,"defense":55},{"attack":70,"defense":80},{"attack":80,"defense":50},{"attack":105,"defense":75},{"attack":65,"defense":100},{"attack":95,"defense":180},{"attack":35,"defense":30},{"attack":50,"defense":45},{"attack":65,"defense":60},{"attack":65,"defense":80},{"attack":45,"defense":160},{"attack":48,"defense":45},{"attack":73,"defense":70},{"attack":105,"defense":90},{"attack":130,"defense":115},{"attack":30,"defense":50},{"attack":50,"defense":70},{"attack":40,"defense":80},{"attack":95,"defense":85},{"attack":50,"defense":95},{"attack":80,"defense":110},{"attack":120,"defense":53},{"attack":105,"defense":79},{"attack":55,"defense":75},{"attack":65,"defense":95},{"attack":90,"defense":120},{"attack":85,"defense":95},{"attack":130,"defense":120},{"attack":5,"defense":5},{"attack":55,"defense":115},{"attack":95,"defense":80},{"attack":125,"defense":100},{"attack":40,"defense":70},{"attack":65,"defense":95},{"attack":67,"defense":60},{"attack":92,"defense":65},{"attack":45,"defense":55},{"attack":75,"defense":85},{"attack":45,"defense":65},{"attack":110,"defense":80},{"attack":50,"defense":35},{"attack":83,"defense":57},{"attack":95,"defense":57},{"attack":125,"defense":100},{"attack":155,"defense":120},{"attack":100,"defense":95},{"attack":10,"defense":55},{"attack":125,"defense":79},{"attack":155,"defense":109},{"attack":85,"defense":80},{"attack":48,"defense":48},{"attack":55,"defense":50},{"attack":65,"defense":60},{"attack":65,"defense":60},{"attack":130,"defense":60},{"attack":60,"defense":70},{"attack":40,"defense":100},{"attack":60,"defense":125},{"attack":80,"defense":90},{"attack":115,"defense":105},{"attack":105,"defense":65},{"attack":135,"defense":85},{"attack":110,"defense":65},{"attack":85,"defense":100},{"attack":90,"defense":85},{"attack":100,"defense":90},{"attack":64,"defense":45},{"attack":84,"defense":65},{"attack":134,"defense":95},{"attack":110,"defense":90},{"attack":190,"defense":100},{"attack":150,"defense":70},{"attack":100,"defense":100},{"attack":49,"defense":65},{"attack":62,"defense":80},{"attack":82,"defense":100},{"attack":52,"defense":43},{"attack":64,"defense":58},{"attack":84,"defense":78},{"attack":65,"defense":64},{"attack":80,"defense":80},{"attack":105,"defense":100},{"attack":46,"defense":34},{"attack":76,"defense":64},{"attack":30,"defense":30},{"attack":50,"defense":50},{"attack":20,"defense":30},{"attack":35,"defense":50},{"attack":60,"defense":40},{"attack":90,"defense":70},{"attack":90,"defense":80},{"attack":38,"defense":38},{"attack":58,"defense":58},{"attack":40,"defense":15},{"attack":25,"defense":28},{"attack":30,"defense":15},{"attack":20,"defense":65},{"attack":40,"defense":85},{"attack":50,"defense":45},{"attack":75,"defense":70},{"attack":40,"defense":40},{"attack":55,"defense":55},{"attack":75,"defense":85},{"attack":95,"defense":105},{"attack":80,"defense":95},{"attack":20,"defense":50},{"attack":50,"defense":80},{"attack":100,"defense":115},{"attack":75,"defense":75},{"attack":35,"defense":40},{"attack":45,"defense":50},{"attack":55,"defense":70},{"attack":70,"defense":55},{"attack":30,"defense":30},{"attack":75,"defense":55},{"attack":65,"defense":45},{"attack":45,"defense":45},{"attack":85,"defense":85},{"attack":65,"defense":60},{"attack":65,"defense":110},{"attack":85,"defense":42},{"attack":75,"defense":80},{"attack":60,"defense":60},{"attack":72,"defense":48},{"attack":33,"defense":58},{"attack":80,"defense":65},{"attack":65,"defense":90},{"attack":90,"defense":140},{"attack":70,"defense":70},{"attack":75,"defense":105},{"attack":85,"defense":200},{"attack":125,"defense":230},{"attack":80,"defense":50},{"attack":120,"defense":75},{"attack":95,"defense":75},{"attack":130,"defense":100},{"attack":150,"defense":140},{"attack":10,"defense":230},{"attack":125,"defense":75},{"attack":185,"defense":115},{"attack":95,"defense":55},{"attack":80,"defense":50},{"attack":130,"defense":75},{"attack":40,"defense":40},{"attack":50,"defense":120},{"attack":50,"defense":40},{"attack":100,"defense":80},{"attack":55,"defense":85},{"attack":65,"defense":35},{"attack":105,"defense":75},{"attack":55,"defense":45},{"attack":40,"defense":70},{"attack":80,"defense":140},{"attack":60,"defense":30},{"attack":90,"defense":50},{"attack":90,"defense":90},{"attack":95,"defense":95},{"attack":60,"defense":60},{"attack":120,"defense":120},{"attack":80,"defense":90},{"attack":95,"defense":62},{"attack":20,"defense":35},{"attack":35,"defense":35},{"attack":95,"defense":95},{"attack":30,"defense":15},{"attack":63,"defense":37},{"attack":75,"defense":37},{"attack":80,"defense":105},{"attack":10,"defense":10},{"attack":85,"defense":75},{"attack":115,"defense":85},{"attack":75,"defense":115},{"attack":64,"defense":50},{"attack":84,"defense":70},{"attack":134,"defense":110},{"attack":164,"defense":150},{"attack":90,"defense":130},{"attack":130,"defense":90},{"attack":100,"defense":100},{"attack":45,"defense":35},{"attack":65,"defense":45},{"attack":85,"defense":65},{"attack":110,"defense":75},{"attack":60,"defense":40},{"attack":85,"defense":60},{"attack":120,"defense":70},{"attack":160,"defense":80},{"attack":70,"defense":50},{"attack":85,"defense":70},{"attack":110,"defense":90},{"attack":150,"defense":110},{"attack":55,"defense":35},{"attack":90,"defense":70},{"attack":30,"defense":41},{"attack":70,"defense":61},{"attack":45,"defense":35},{"attack":35,"defense":55},{"attack":70,"defense":50},{"attack":35,"defense":55},{"attack":50,"defense":70},{"attack":30,"defense":30},{"attack":50,"defense":50},{"attack":70,"defense":70},{"attack":40,"defense":50},{"attack":70,"defense":40},{"attack":100,"defense":60},{"attack":55,"defense":30},{"attack":85,"defense":60},{"attack":30,"defense":30},{"attack":50,"defense":100},{"attack":25,"defense":25},{"attack":35,"defense":35},{"attack":65,"defense":65},{"attack":85,"defense":65},{"attack":30,"defense":32},{"attack":60,"defense":62},{"attack":40,"defense":60},{"attack":130,"defense":80},{"attack":60,"defense":60},{"attack":80,"defense":80},{"attack":160,"defense":100},{"attack":45,"defense":90},{"attack":90,"defense":45},{"attack":90,"defense":45},{"attack":51,"defense":23},{"attack":71,"defense":43},{"attack":91,"defense":63},{"attack":60,"defense":30},{"attack":120,"defense":60},{"attack":20,"defense":40},{"attack":45,"defense":135},{"attack":45,"defense":45},{"attack":65,"defense":65},{"attack":75,"defense":75},{"attack":85,"defense":125},{"attack":85,"defense":85},{"attack":105,"defense":125},{"attack":70,"defense":100},{"attack":90,"defense":140},{"attack":110,"defense":180},{"attack":140,"defense":230},{"attack":40,"defense":55},{"attack":60,"defense":75},{"attack":100,"defense":85},{"attack":45,"defense":40},{"attack":75,"defense":60},{"attack":75,"defense":80},{"attack":50,"defense":40},{"attack":40,"defense":50},{"attack":73,"defense":55},{"attack":47,"defense":55},{"attack":60,"defense":45},{"attack":43,"defense":53},{"attack":73,"defense":83},{"attack":90,"defense":20},{"attack":120,"defense":40},{"attack":140,"defense":70},{"attack":70,"defense":35},{"attack":90,"defense":45},{"attack":60,"defense":40},{"attack":100,"defense":70},{"attack":120,"defense":100},{"attack":85,"defense":140},{"attack":25,"defense":35},{"attack":45,"defense":65},{"attack":60,"defense":60},{"attack":100,"defense":45},{"attack":70,"defense":50},{"attack":100,"defense":80},{"attack":85,"defense":40},{"attack":115,"defense":60},{"attack":40,"defense":60},{"attack":70,"defense":90},{"attack":110,"defense":110},{"attack":115,"defense":60},{"attack":100,"defense":60},{"attack":55,"defense":65},{"attack":95,"defense":85},{"attack":48,"defense":43},{"attack":78,"defense":73},{"attack":80,"defense":65},{"attack":120,"defense":85},{"attack":40,"defense":55},{"attack":70,"defense":105},{"attack":41,"defense":77},{"attack":81,"defense":97},{"attack":95,"defense":50},{"attack":125,"defense":100},{"attack":15,"defense":20},{"attack":60,"defense":79},{"attack":70,"defense":70},{"attack":90,"defense":70},{"attack":75,"defense":35},{"attack":115,"defense":65},{"attack":165,"defense":75},{"attack":40,"defense":90},{"attack":70,"defense":130},{"attack":68,"defense":83},{"attack":50,"defense":70},{"attack":130,"defense":60},{"attack":150,"defense":60},{"attack":23,"defense":48},{"attack":50,"defense":50},{"attack":80,"defense":80},{"attack":120,"defense":80},{"attack":40,"defense":50},{"attack":60,"defense":70},{"attack":80,"defense":90},{"attack":64,"defense":85},{"attack":104,"defense":105},{"attack":84,"defense":105},{"attack":90,"defense":130},{"attack":30,"defense":55},{"attack":75,"defense":60},{"attack":95,"defense":100},{"attack":135,"defense":80},{"attack":145,"defense":130},{"attack":55,"defense":80},{"attack":75,"defense":100},{"attack":135,"defense":130},{"attack":145,"defense":150},{"attack":100,"defense":200},{"attack":50,"defense":100},{"attack":75,"defense":150},{"attack":80,"defense":90},{"attack":100,"defense":120},{"attack":90,"defense":80},{"attack":130,"defense":100},{"attack":100,"defense":90},{"attack":150,"defense":90},{"attack":150,"defense":140},{"attack":180,"defense":160},{"attack":150,"defense":90},{"attack":180,"defense":100},{"attack":100,"defense":100},{"attack":150,"defense":50},{"attack":180,"defense":20},{"attack":70,"defense":160},{"attack":95,"defense":90},{"attack":68,"defense":64},{"attack":89,"defense":85},{"attack":109,"defense":105},{"attack":58,"defense":44},{"attack":78,"defense":52},{"attack":104,"defense":71},{"attack":51,"defense":53},{"attack":66,"defense":68},{"attack":86,"defense":88},{"attack":55,"defense":30},{"attack":75,"defense":50},{"attack":120,"defense":70},{"attack":45,"defense":40},{"attack":85,"defense":60},{"attack":25,"defense":41},{"attack":85,"defense":51},{"attack":65,"defense":34},{"attack":85,"defense":49},{"attack":120,"defense":79},{"attack":30,"defense":35},{"attack":70,"defense":65},{"attack":125,"defense":40},{"attack":165,"defense":60},{"attack":42,"defense":118},{"attack":52,"defense":168},{"attack":29,"defense":45},{"attack":59,"defense":85},{"attack":79,"defense":105},{"attack":69,"defense":95},{"attack":94,"defense":50},{"attack":30,"defense":42},{"attack":80,"defense":102},{"attack":45,"defense":70},{"attack":65,"defense":35},{"attack":105,"defense":55},{"attack":35,"defense":45},{"attack":60,"defense":70},{"attack":48,"defense":48},{"attack":83,"defense":68},{"attack":100,"defense":66},{"attack":50,"defense":34},{"attack":80,"defense":44},{"attack":66,"defense":44},{"attack":76,"defense":84},{"attack":136,"defense":94},{"attack":60,"defense":60},{"attack":125,"defense":52},{"attack":55,"defense":42},{"attack":82,"defense":64},{"attack":30,"defense":50},{"attack":63,"defense":47},{"attack":93,"defense":67},{"attack":24,"defense":86},{"attack":89,"defense":116},{"attack":80,"defense":95},{"attack":25,"defense":45},{"attack":5,"defense":5},{"attack":65,"defense":45},{"attack":92,"defense":108},{"attack":70,"defense":45},{"attack":90,"defense":65},{"attack":130,"defense":95},{"attack":170,"defense":115},{"attack":85,"defense":40},{"attack":70,"defense":40},{"attack":110,"defense":70},{"attack":145,"defense":88},{"attack":72,"defense":78},{"attack":112,"defense":118},{"attack":50,"defense":90},{"attack":90,"defense":110},{"attack":61,"defense":40},{"attack":106,"defense":65},{"attack":100,"defense":72},{"attack":49,"defense":56},{"attack":69,"defense":76},{"attack":20,"defense":50},{"attack":62,"defense":50},{"attack":92,"defense":75},{"attack":132,"defense":105},{"attack":120,"defense":65},{"attack":70,"defense":115},{"attack":85,"defense":95},{"attack":140,"defense":130},{"attack":100,"defense":125},{"attack":123,"defense":67},{"attack":95,"defense":67},{"attack":50,"defense":95},{"attack":76,"defense":86},{"attack":110,"defense":130},{"attack":60,"defense":110},{"attack":95,"defense":125},{"attack":130,"defense":80},{"attack":80,"defense":70},{"attack":125,"defense":65},{"attack":165,"defense":95},{"attack":55,"defense":145},{"attack":100,"defense":135},{"attack":80,"defense":70},{"attack":50,"defense":77},{"attack":65,"defense":107},{"attack":65,"defense":107},{"attack":65,"defense":107},{"attack":65,"defense":107},{"attack":65,"defense":107},{"attack":75,"defense":130},{"attack":105,"defense":105},{"attack":125,"defense":70},{"attack":120,"defense":120},{"attack":120,"defense":100},{"attack":90,"defense":106},{"attack":160,"defense":110},{"attack":100,"defense":120},{"attack":120,"defense":100},{"attack":70,"defense":120},{"attack":80,"defense":80},{"attack":100,"defense":100},{"attack":90,"defense":90},{"attack":100,"defense":100},{"attack":103,"defense":75},{"attack":120,"defense":120},{"attack":100,"defense":100},{"attack":45,"defense":55},{"attack":60,"defense":75},{"attack":75,"defense":95},{"attack":63,"defense":45},{"attack":93,"defense":55},{"attack":123,"defense":65},{"attack":55,"defense":45},{"attack":75,"defense":60},{"attack":100,"defense":85},{"attack":55,"defense":39},{"attack":85,"defense":69},{"attack":60,"defense":45},{"attack":80,"defense":65},{"attack":110,"defense":90},{"attack":50,"defense":37},{"attack":88,"defense":50},{"attack":53,"defense":48},{"attack":98,"defense":63},{"attack":53,"defense":48},{"attack":98,"defense":63},{"attack":53,"defense":48},{"attack":98,"defense":63},{"attack":25,"defense":45},{"attack":55,"defense":85},{"attack":55,"defense":50},{"attack":77,"defense":62},{"attack":115,"defense":80},{"attack":60,"defense":32},{"attack":100,"defense":63},{"attack":75,"defense":85},{"attack":105,"defense":105},{"attack":135,"defense":130},{"attack":45,"defense":43},{"attack":57,"defense":55},{"attack":85,"defense":40},{"attack":135,"defense":60},{"attack":60,"defense":86},{"attack":60,"defense":126},{"attack":80,"defense":55},{"attack":105,"defense":85},{"attack":140,"defense":95},{"attack":50,"defense":40},{"attack":65,"defense":55},{"attack":95,"defense":75},{"attack":100,"defense":85},{"attack":125,"defense":75},{"attack":53,"defense":70},{"attack":63,"defense":90},{"attack":103,"defense":80},{"attack":45,"defense":59},{"attack":55,"defense":99},{"attack":100,"defense":89},{"attack":27,"defense":60},{"attack":67,"defense":85},{"attack":35,"defense":50},{"attack":60,"defense":75},{"attack":92,"defense":65},{"attack":72,"defense":35},{"attack":82,"defense":45},{"attack":117,"defense":80},{"attack":90,"defense":45},{"attack":140,"defense":55},{"attack":30,"defense":105},{"attack":86,"defense":67},{"attack":65,"defense":85},{"attack":95,"defense":125},{"attack":75,"defense":70},{"attack":90,"defense":115},{"attack":58,"defense":80},{"attack":30,"defense":85},{"attack":50,"defense":145},{"attack":78,"defense":103},{"attack":108,"defense":133},{"attack":112,"defense":45},{"attack":140,"defense":65},{"attack":50,"defense":62},{"attack":95,"defense":82},{"attack":65,"defense":40},{"attack":105,"defense":60},{"attack":50,"defense":40},{"attack":95,"defense":60},{"attack":30,"defense":50},{"attack":45,"defense":70},{"attack":55,"defense":95},{"attack":30,"defense":40},{"attack":40,"defense":50},{"attack":65,"defense":75},{"attack":44,"defense":50},{"attack":87,"defense":63},{"attack":50,"defense":50},{"attack":65,"defense":65},{"attack":95,"defense":85},{"attack":60,"defense":50},{"attack":100,"defense":70},{"attack":75,"defense":60},{"attack":75,"defense":45},{"attack":135,"defense":105},{"attack":55,"defense":45},{"attack":85,"defense":70},{"attack":40,"defense":50},{"attack":60,"defense":70},{"attack":75,"defense":80},{"attack":47,"defense":50},{"attack":77,"defense":60},{"attack":50,"defense":91},{"attack":94,"defense":131},{"attack":55,"defense":70},{"attack":80,"defense":95},{"attack":100,"defense":115},{"attack":55,"defense":40},{"attack":85,"defense":70},{"attack":115,"defense":80},{"attack":55,"defense":55},{"attack":75,"defense":75},{"attack":30,"defense":55},{"attack":40,"defense":60},{"attack":55,"defense":90},{"attack":87,"defense":60},{"attack":117,"defense":70},{"attack":147,"defense":90},{"attack":70,"defense":40},{"attack":110,"defense":80},{"attack":50,"defense":30},{"attack":40,"defense":85},{"attack":70,"defense":40},{"attack":66,"defense":84},{"attack":85,"defense":50},{"attack":125,"defense":60},{"attack":120,"defense":90},{"attack":74,"defense":50},{"attack":124,"defense":80},{"attack":85,"defense":70},{"attack":125,"defense":100},{"attack":110,"defense":95},{"attack":83,"defense":50},{"attack":123,"defense":75},{"attack":55,"defense":75},{"attack":65,"defense":105},{"attack":97,"defense":66},{"attack":109,"defense":112},{"attack":65,"defense":50},{"attack":85,"defense":70},{"attack":105,"defense":90},{"attack":85,"defense":55},{"attack":60,"defense":65},{"attack":90,"defense":129},{"attack":129,"defense":90},{"attack":90,"defense":72},{"attack":115,"defense":70},{"attack":100,"defense":80},{"attack":115,"defense":70},{"attack":105,"defense":70},{"attack":120,"defense":100},{"attack":150,"defense":120},{"attack":125,"defense":90},{"attack":145,"defense":90},{"attack":130,"defense":90},{"attack":170,"defense":100},{"attack":120,"defense":90},{"attack":72,"defense":90},{"attack":72,"defense":90},{"attack":77,"defense":77},{"attack":128,"defense":90},{"attack":120,"defense":95},{"attack":61,"defense":65},{"attack":78,"defense":95},{"attack":107,"defense":122},{"attack":45,"defense":40},{"attack":59,"defense":58},{"attack":69,"defense":72},{"attack":56,"defense":40},{"attack":63,"defense":52},{"attack":95,"defense":67},{"attack":36,"defense":38},{"attack":56,"defense":77},{"attack":50,"defense":43},{"attack":73,"defense":55},{"attack":81,"defense":71},{"attack":35,"defense":40},{"attack":22,"defense":60},{"attack":52,"defense":50},{"attack":50,"defense":58},{"attack":68,"defense":72},{"attack":38,"defense":39},{"attack":45,"defense":47},{"attack":65,"defense":68},{"attack":65,"defense":48},{"attack":100,"defense":62},{"attack":82,"defense":62},{"attack":124,"defense":78},{"attack":80,"defense":60},{"attack":48,"defense":54},{"attack":48,"defense":76},{"attack":48,"defense":76},{"attack":80,"defense":100},{"attack":110,"defense":150},{"attack":150,"defense":50},{"attack":50,"defense":150},{"attack":52,"defense":60},{"attack":72,"defense":72},{"attack":48,"defense":66},{"attack":80,"defense":86},{"attack":54,"defense":53},{"attack":92,"defense":88},{"attack":52,"defense":67},{"attack":105,"defense":115},{"attack":60,"defense":60},{"attack":75,"defense":90},{"attack":53,"defense":62},{"attack":73,"defense":88},{"attack":38,"defense":33},{"attack":55,"defense":52},{"attack":89,"defense":77},{"attack":121,"defense":119},{"attack":59,"defense":50},{"attack":77,"defense":72},{"attack":65,"defense":65},{"attack":92,"defense":75},{"attack":58,"defense":57},{"attack":50,"defense":150},{"attack":50,"defense":35},{"attack":75,"defense":53},{"attack":100,"defense":70},{"attack":80,"defense":91},{"attack":70,"defense":48},{"attack":110,"defense":76},{"attack":66,"defense":70},{"attack":66,"defense":70},{"attack":66,"defense":70},{"attack":66,"defense":70},{"attack":90,"defense":122},{"attack":85,"defense":122},{"attack":95,"defense":122},{"attack":100,"defense":122},{"attack":69,"defense":85},{"attack":117,"defense":184},{"attack":30,"defense":35},{"attack":70,"defense":80},{"attack":131,"defense":95},{"attack":131,"defense":95},{"attack":100,"defense":121},{"attack":100,"defense":150},{"attack":160,"defense":110},{"attack":110,"defense":60},{"attack":160,"defense":60},{"attack":110,"defense":120}]},"mark":"point","width":600,"height":300,"encoding":{"x":{"field":"attack","type":"quantitative"},"y":{"field":"defense","type":"quantitative"},"color":{"value":"dodgerblue"}}};
+    vegaEmbed('#uuid-85a89b06-c06f-4b16-8b44-614ab74174ff', spec, {defaultStyle:true}).catch(console.warn);
+    }, function(err) {
+    console.log('Failed to load');
+  });
+  </script>
+</div>
+  
+
+
+
+And now the `Speed` histogram
+
+
+```clojure
+(defn hist
+  [data x & [color]]
+  (let [spec {:data {:values data}
+              :mark "bar"
+              :width 600
+              :height 300
+              :encoding {:x {:field x
+                             :bin {:maxbins 50}
+                             :type "quantitative"}
+                         :y {:aggregate "count"
+                             :type "quantitative"}
+                         :color {}}}]
+    (if color
+      (assoc-in spec [:encoding :color] {:field color
+                                         :type "nominal"})
+      (assoc-in spec [:encoding :color] {:value "dodgerblue"}))))
+```
+
+
+
+
+    #'user/hist
+
+
+
+
+```clojure
+(-> pokemon
+    (pt/subset-cols :Speed)
+    pt/->clj
+    (hist :speed)
+    oz/view!)
+```
+
+
+
+
+
+<div>
+  <div id='uuid-b9587ca1-9c57-4157-a815-ef58bff13e17'></div>
+  <script>
+  requirejs.config({
+    baseUrl: 'https://cdn.jsdelivr.net/npm/',
+    paths: {
+      'vega-embed':  'vega-embed@3?noext',
+      'vega-lib': 'vega-lib?noext',
+      'vega-lite': 'vega-lite@2?noext',
+      'vega': 'vega@3?noext'
+    }
+  });
+  require(['vega-embed'], function(vegaEmbed) {
+    let spec = {"data":{"values":[{"speed":45},{"speed":60},{"speed":80},{"speed":80},{"speed":65},{"speed":80},{"speed":100},{"speed":100},{"speed":100},{"speed":43},{"speed":58},{"speed":78},{"speed":78},{"speed":45},{"speed":30},{"speed":70},{"speed":50},{"speed":35},{"speed":75},{"speed":145},{"speed":56},{"speed":71},{"speed":101},{"speed":121},{"speed":72},{"speed":97},{"speed":70},{"speed":100},{"speed":55},{"speed":80},{"speed":90},{"speed":110},{"speed":40},{"speed":65},{"speed":41},{"speed":56},{"speed":76},{"speed":50},{"speed":65},{"speed":85},{"speed":35},{"speed":60},{"speed":65},{"speed":100},{"speed":20},{"speed":45},{"speed":55},{"speed":90},{"speed":30},{"speed":40},{"speed":50},{"speed":25},{"speed":30},{"speed":45},{"speed":90},{"speed":95},{"speed":120},{"speed":90},{"speed":115},{"speed":55},{"speed":85},{"speed":70},{"speed":95},{"speed":60},{"speed":95},{"speed":90},{"speed":90},{"speed":70},{"speed":90},{"speed":105},{"speed":120},{"speed":150},{"speed":35},{"speed":45},{"speed":55},{"speed":40},{"speed":55},{"speed":70},{"speed":70},{"speed":100},{"speed":20},{"speed":35},{"speed":45},{"speed":90},{"speed":105},{"speed":15},{"speed":30},{"speed":30},{"speed":45},{"speed":70},{"speed":60},{"speed":75},{"speed":100},{"speed":45},{"speed":70},{"speed":25},{"speed":50},{"speed":40},{"speed":70},{"speed":80},{"speed":95},{"speed":110},{"speed":130},{"speed":70},{"speed":42},{"speed":67},{"speed":50},{"speed":75},{"speed":100},{"speed":140},{"speed":40},{"speed":55},{"speed":35},{"speed":45},{"speed":87},{"speed":76},{"speed":30},{"speed":35},{"speed":60},{"speed":25},{"speed":40},{"speed":50},{"speed":60},{"speed":90},{"speed":100},{"speed":60},{"speed":85},{"speed":63},{"speed":68},{"speed":85},{"speed":115},{"speed":90},{"speed":105},{"speed":95},{"speed":105},{"speed":93},{"speed":85},{"speed":105},{"speed":110},{"speed":80},{"speed":81},{"speed":81},{"speed":60},{"speed":48},{"speed":55},{"speed":65},{"speed":130},{"speed":65},{"speed":40},{"speed":35},{"speed":55},{"speed":55},{"speed":80},{"speed":130},{"speed":150},{"speed":30},{"speed":85},{"speed":100},{"speed":90},{"speed":50},{"speed":70},{"speed":80},{"speed":130},{"speed":130},{"speed":140},{"speed":100},{"speed":45},{"speed":60},{"speed":80},{"speed":65},{"speed":80},{"speed":100},{"speed":43},{"speed":58},{"speed":78},{"speed":20},{"speed":90},{"speed":50},{"speed":70},{"speed":55},{"speed":85},{"speed":30},{"speed":40},{"speed":130},{"speed":67},{"speed":67},{"speed":60},{"speed":15},{"speed":15},{"speed":20},{"speed":40},{"speed":70},{"speed":95},{"speed":35},{"speed":45},{"speed":55},{"speed":45},{"speed":50},{"speed":40},{"speed":50},{"speed":30},{"speed":70},{"speed":50},{"speed":80},{"speed":110},{"speed":85},{"speed":30},{"speed":30},{"speed":95},{"speed":15},{"speed":35},{"speed":110},{"speed":65},{"speed":91},{"speed":30},{"speed":85},{"speed":48},{"speed":33},{"speed":85},{"speed":15},{"speed":40},{"speed":45},{"speed":85},{"speed":30},{"speed":30},{"speed":30},{"speed":45},{"speed":85},{"speed":65},{"speed":75},{"speed":5},{"speed":85},{"speed":75},{"speed":115},{"speed":40},{"speed":55},{"speed":20},{"speed":30},{"speed":50},{"speed":50},{"speed":35},{"speed":65},{"speed":45},{"speed":75},{"speed":70},{"speed":70},{"speed":65},{"speed":95},{"speed":115},{"speed":85},{"speed":40},{"speed":50},{"speed":60},{"speed":85},{"speed":75},{"speed":35},{"speed":70},{"speed":65},{"speed":95},{"speed":83},{"speed":100},{"speed":55},{"speed":115},{"speed":100},{"speed":85},{"speed":41},{"speed":51},{"speed":61},{"speed":71},{"speed":110},{"speed":90},{"speed":100},{"speed":70},{"speed":95},{"speed":120},{"speed":145},{"speed":45},{"speed":55},{"speed":80},{"speed":100},{"speed":40},{"speed":50},{"speed":60},{"speed":70},{"speed":35},{"speed":70},{"speed":60},{"speed":100},{"speed":20},{"speed":15},{"speed":65},{"speed":15},{"speed":65},{"speed":30},{"speed":50},{"speed":70},{"speed":30},{"speed":60},{"speed":80},{"speed":85},{"speed":125},{"speed":85},{"speed":65},{"speed":40},{"speed":50},{"speed":80},{"speed":100},{"speed":65},{"speed":60},{"speed":35},{"speed":70},{"speed":30},{"speed":90},{"speed":100},{"speed":40},{"speed":160},{"speed":40},{"speed":28},{"speed":48},{"speed":68},{"speed":25},{"speed":50},{"speed":20},{"speed":30},{"speed":50},{"speed":70},{"speed":50},{"speed":20},{"speed":50},{"speed":50},{"speed":30},{"speed":40},{"speed":50},{"speed":50},{"speed":60},{"speed":80},{"speed":100},{"speed":65},{"speed":105},{"speed":135},{"speed":95},{"speed":95},{"speed":85},{"speed":85},{"speed":65},{"speed":40},{"speed":55},{"speed":65},{"speed":95},{"speed":105},{"speed":60},{"speed":60},{"speed":35},{"speed":40},{"speed":20},{"speed":20},{"speed":60},{"speed":80},{"speed":60},{"speed":10},{"speed":70},{"speed":100},{"speed":35},{"speed":55},{"speed":50},{"speed":80},{"speed":80},{"speed":90},{"speed":65},{"speed":70},{"speed":70},{"speed":60},{"speed":60},{"speed":35},{"speed":55},{"speed":55},{"speed":75},{"speed":23},{"speed":43},{"speed":75},{"speed":45},{"speed":80},{"speed":81},{"speed":70},{"speed":40},{"speed":45},{"speed":65},{"speed":75},{"speed":25},{"speed":25},{"speed":51},{"speed":65},{"speed":75},{"speed":115},{"speed":23},{"speed":50},{"speed":80},{"speed":100},{"speed":25},{"speed":45},{"speed":65},{"speed":32},{"speed":52},{"speed":52},{"speed":55},{"speed":97},{"speed":50},{"speed":50},{"speed":100},{"speed":120},{"speed":30},{"speed":50},{"speed":70},{"speed":110},{"speed":50},{"speed":50},{"speed":50},{"speed":110},{"speed":110},{"speed":110},{"speed":110},{"speed":90},{"speed":90},{"speed":90},{"speed":90},{"speed":95},{"speed":115},{"speed":100},{"speed":150},{"speed":150},{"speed":90},{"speed":180},{"speed":31},{"speed":36},{"speed":56},{"speed":61},{"speed":81},{"speed":108},{"speed":40},{"speed":50},{"speed":60},{"speed":60},{"speed":80},{"speed":100},{"speed":31},{"speed":71},{"speed":25},{"speed":65},{"speed":45},{"speed":60},{"speed":70},{"speed":55},{"speed":90},{"speed":58},{"speed":58},{"speed":30},{"speed":30},{"speed":36},{"speed":36},{"speed":36},{"speed":36},{"speed":66},{"speed":70},{"speed":40},{"speed":95},{"speed":85},{"speed":115},{"speed":35},{"speed":85},{"speed":34},{"speed":39},{"speed":115},{"speed":70},{"speed":80},{"speed":85},{"speed":105},{"speed":135},{"speed":105},{"speed":71},{"speed":85},{"speed":112},{"speed":45},{"speed":74},{"speed":84},{"speed":23},{"speed":33},{"speed":10},{"speed":60},{"speed":30},{"speed":91},{"speed":35},{"speed":42},{"speed":82},{"speed":102},{"speed":92},{"speed":5},{"speed":60},{"speed":90},{"speed":112},{"speed":32},{"speed":47},{"speed":65},{"speed":95},{"speed":50},{"speed":85},{"speed":46},{"speed":66},{"speed":91},{"speed":50},{"speed":40},{"speed":60},{"speed":30},{"speed":125},{"speed":60},{"speed":50},{"speed":40},{"speed":50},{"speed":95},{"speed":83},{"speed":80},{"speed":95},{"speed":95},{"speed":65},{"speed":95},{"speed":80},{"speed":90},{"speed":80},{"speed":110},{"speed":40},{"speed":45},{"speed":110},{"speed":91},{"speed":86},{"speed":86},{"speed":86},{"speed":86},{"speed":86},{"speed":95},{"speed":80},{"speed":115},{"speed":90},{"speed":100},{"speed":77},{"speed":100},{"speed":90},{"speed":90},{"speed":85},{"speed":80},{"speed":100},{"speed":125},{"speed":100},{"speed":127},{"speed":120},{"speed":100},{"speed":63},{"speed":83},{"speed":113},{"speed":45},{"speed":55},{"speed":65},{"speed":45},{"speed":60},{"speed":70},{"speed":42},{"speed":77},{"speed":55},{"speed":60},{"speed":80},{"speed":66},{"speed":106},{"speed":64},{"speed":101},{"speed":64},{"speed":101},{"speed":64},{"speed":101},{"speed":24},{"speed":29},{"speed":43},{"speed":65},{"speed":93},{"speed":76},{"speed":116},{"speed":15},{"speed":20},{"speed":25},{"speed":72},{"speed":114},{"speed":68},{"speed":88},{"speed":50},{"speed":50},{"speed":35},{"speed":40},{"speed":45},{"speed":64},{"speed":69},{"speed":74},{"speed":45},{"speed":85},{"speed":42},{"speed":42},{"speed":92},{"speed":57},{"speed":47},{"speed":112},{"speed":66},{"speed":116},{"speed":30},{"speed":90},{"speed":98},{"speed":65},{"speed":74},{"speed":92},{"speed":50},{"speed":95},{"speed":55},{"speed":60},{"speed":55},{"speed":45},{"speed":48},{"speed":58},{"speed":97},{"speed":30},{"speed":30},{"speed":22},{"speed":32},{"speed":70},{"speed":110},{"speed":65},{"speed":75},{"speed":65},{"speed":105},{"speed":75},{"speed":115},{"speed":45},{"speed":55},{"speed":65},{"speed":20},{"speed":30},{"speed":30},{"speed":55},{"speed":98},{"speed":44},{"speed":59},{"speed":79},{"speed":75},{"speed":95},{"speed":103},{"speed":60},{"speed":20},{"speed":15},{"speed":30},{"speed":40},{"speed":60},{"speed":65},{"speed":65},{"speed":108},{"speed":10},{"speed":20},{"speed":30},{"speed":50},{"speed":90},{"speed":60},{"speed":40},{"speed":50},{"speed":30},{"speed":40},{"speed":20},{"speed":55},{"speed":80},{"speed":57},{"speed":67},{"speed":97},{"speed":40},{"speed":50},{"speed":105},{"speed":25},{"speed":145},{"speed":32},{"speed":65},{"speed":105},{"speed":48},{"speed":35},{"speed":55},{"speed":60},{"speed":70},{"speed":55},{"speed":60},{"speed":80},{"speed":60},{"speed":80},{"speed":65},{"speed":109},{"speed":38},{"speed":58},{"speed":98},{"speed":60},{"speed":100},{"speed":108},{"speed":108},{"speed":108},{"speed":111},{"speed":121},{"speed":111},{"speed":101},{"speed":90},{"speed":90},{"speed":101},{"speed":91},{"speed":95},{"speed":95},{"speed":95},{"speed":108},{"speed":108},{"speed":90},{"speed":128},{"speed":99},{"speed":38},{"speed":57},{"speed":64},{"speed":60},{"speed":73},{"speed":104},{"speed":71},{"speed":97},{"speed":122},{"speed":57},{"speed":78},{"speed":62},{"speed":84},{"speed":126},{"speed":35},{"speed":29},{"speed":89},{"speed":72},{"speed":106},{"speed":42},{"speed":52},{"speed":75},{"speed":52},{"speed":68},{"speed":43},{"speed":58},{"speed":102},{"speed":68},{"speed":104},{"speed":104},{"speed":28},{"speed":35},{"speed":60},{"speed":60},{"speed":23},{"speed":29},{"speed":49},{"speed":72},{"speed":45},{"speed":73},{"speed":50},{"speed":68},{"speed":30},{"speed":44},{"speed":44},{"speed":59},{"speed":70},{"speed":109},{"speed":48},{"speed":71},{"speed":46},{"speed":58},{"speed":60},{"speed":118},{"speed":101},{"speed":50},{"speed":40},{"speed":60},{"speed":80},{"speed":75},{"speed":38},{"speed":56},{"speed":51},{"speed":56},{"speed":46},{"speed":41},{"speed":84},{"speed":99},{"speed":69},{"speed":54},{"speed":28},{"speed":28},{"speed":55},{"speed":123},{"speed":99},{"speed":99},{"speed":95},{"speed":50},{"speed":110},{"speed":70},{"speed":80},{"speed":70}]},"mark":"bar","width":600,"height":300,"encoding":{"x":{"field":"speed","bin":{"maxbins":50},"type":"quantitative"},"y":{"aggregate":"count","type":"quantitative"},"color":{"value":"dodgerblue"}}};
+    vegaEmbed('#uuid-b9587ca1-9c57-4157-a815-ef58bff13e17', spec, {defaultStyle:true}).catch(console.warn);
+    }, function(err) {
+    console.log('Failed to load');
+  });
+  </script>
+</div>
+  
+
+
+
+## Data-frames basics
+
+### Creation
+
+How to create data-frames? Above we read a csv, but what if we already have some data in the runtime we want to deal with? Nothing easier than this:
+
+
+```clojure
+(show (pt/data-frame [{:a 1 :b 2} {:a 3 :b 4}]))
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>a</th>
+      <th>b</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>3</td>
+      <td>4</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+What if we don't care about column names, or we'd prefer to add them to an already generated data-frame?
+
+
+```clojure
+(show (pt/data-frame (to-array-2d [[1 2] [3 4]])))
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>0</th>
+      <th>1</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>3</td>
+      <td>4</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+Columns of data-frames are just serieses:
+
+
+```clojure
+(-> pokemon (pt/subset-cols "Defense") pt/pytype)
+```
+
+
+
+
+    :series
+
+
+
+
+```clojure
+(pt/series [1 2 3])
+```
+
+
+
+
+    0    1
+    1    2
+    2    3
+    dtype: int64
+
+
+
+The column name is the name of the series:
+
+
+```clojure
+(pt/series [1 2 3] {:name :my-series})
+```
+
+
+
+
+    0    1
+    1    2
+    2    3
+    Name: my-series, dtype: int64
+
+
+
+### Filtering
+
+One of the most straightforward ways to filter data-frames is with booleans. We have `filter-rows` that takes either booleans or a function that generates booleans
+
+
+```clojure
+(-> pokemon
+    (pt/filter-rows #(-> % (pt/subset-cols "Defense") (pt/gt 200)))
+    show)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>Name</th>
+      <th>Type 1</th>
+      <th>Type 2</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>224</th>
+      <td>225</td>
+      <td>Mega Steelix</td>
+      <td>Steel</td>
+      <td>Ground</td>
+      <td>75</td>
+      <td>125</td>
+      <td>230</td>
+      <td>55</td>
+      <td>95</td>
+      <td>30</td>
+      <td>2</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>230</th>
+      <td>231</td>
+      <td>Shuckle</td>
+      <td>Bug</td>
+      <td>Rock</td>
+      <td>20</td>
+      <td>10</td>
+      <td>230</td>
+      <td>10</td>
+      <td>230</td>
+      <td>5</td>
+      <td>2</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>333</th>
+      <td>334</td>
+      <td>Mega Aggron</td>
+      <td>Steel</td>
+      <td>NaN</td>
+      <td>70</td>
+      <td>140</td>
+      <td>230</td>
+      <td>60</td>
+      <td>80</td>
+      <td>50</td>
+      <td>3</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+`gt` is exactly what you think it is: `>`. Check the [Basic concepts](https://github.com/alanmarazzi/panthera/blob/master/examples/basic-concepts.ipynb) notebook to better understand how math works in panthera.
+
+Now we'll have to introduce Numpy in the equation. Let's say we want to filter the data-frame based on 2 conditions at the same time, we can do that using `npy`:
+
+
+```clojure
+(require '[panthera.numpy :refer [npy]])
+```
+
+
+
+
+    nil
+
+
+
+
+```clojure
+(defn my-filter
+  [col1 col2]
+  (npy :logical-and 
+       {:args [(-> pokemon
+                   (pt/subset-cols col1)
+                   (pt/gt 200))
+               (-> pokemon
+                   (pt/subset-cols col2)
+                   (pt/gt 100))]}))
+```
+
+
+
+
+    #'user/my-filter
+
+
+
+
+```clojure
+(-> pokemon
+    (pt/filter-rows (my-filter :Defense :Attack))
+    show)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>Name</th>
+      <th>Type 1</th>
+      <th>Type 2</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>224</th>
+      <td>225</td>
+      <td>Mega Steelix</td>
+      <td>Steel</td>
+      <td>Ground</td>
+      <td>75</td>
+      <td>125</td>
+      <td>230</td>
+      <td>55</td>
+      <td>95</td>
+      <td>30</td>
+      <td>2</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>333</th>
+      <td>334</td>
+      <td>Mega Aggron</td>
+      <td>Steel</td>
+      <td>NaN</td>
+      <td>70</td>
+      <td>140</td>
+      <td>230</td>
+      <td>60</td>
+      <td>80</td>
+      <td>50</td>
+      <td>3</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+`panthera.numpy` works a little differently than regular panthera, usually you need only `npy` to have access to all of numpy functions.
+
+For instance:
+
+
+```clojure
+(-> pokemon
+    (pt/subset-cols :Defense)
+    ((npy :log))
+    pt/head)
+```
+
+
+
+
+    0    3.891820
+    1    4.143135
+    2    4.418841
+    3    4.812184
+    4    3.761200
+    Name: Defense, dtype: float64
+
+
+
+Above we just calculated the `log` of the whole `Defense` column! Remember that `npy` operations are vectorized, so usually it is faster to use them (or equivalent panthera ones) than Clojure ones (unless you're doing more complicated operations, then Clojure would *probably* be faster).
+
+Now let's try to do some more complicated things:
+
+
+```clojure
+(/ (pt/sum (pt/subset-cols pokemon :Speed)) 
+   (pt/n-rows pokemon))
+```
+
+
+
+
+    27311/400
+
+
+
+Above we see how we can combine operations on serieses, but of course that's a `mean`, and we have a function for that!
+
+
+```clojure
+(defn col-mean
+  [col]
+  (pt/mean (pt/subset-cols pokemon col)))
+```
+
+
+
+
+    #'user/col-mean
+
+
+
+Now we would like to add a new column that says `high` when the value is above the mean, and `low` for the opposite.
+
+`npy` is really helpful here:
+
+
+```clojure
+(npy :where {:args [(pt/gt (pt/head (pt/subset-cols pokemon :Speed)) (col-mean :Speed))
+                    "high"
+                    "low"]})
+```
+
+
+
+
+    ['low' 'low' 'high' 'high' 'low']
+
+
+
+But this is pretty ugly and we can't chain it with other functions. It is pretty easy to wrap it into a chainable function:
+
+
+```clojure
+(defn where
+  [& args]
+  (npy :where {:args args}))
+```
+
+
+
+
+    #'user/where
+
+
+
+
+```clojure
+(-> pokemon
+    (pt/subset-cols :Speed)
+    pt/head
+    (pt/gt (col-mean :Speed))
+    (where "high" "low"))
+```
+
+
+
+
+    ['low' 'low' 'high' 'high' 'low']
+
+
+
+That seems to work! Let's add a new column to our data-frame:
+
+
+```clojure
+(def speed-level
+  (-> pokemon
+    (pt/subset-cols :Speed)
+    (pt/gt (col-mean :Speed))
+    (where "high" "low")))
+
+(-> pokemon
+    (pt/assign {:speed-level speed-level})
+    (pt/subset-cols :speed_level :Speed)
+    (pt/head 10)
+    show)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>speed_level</th>
+      <th>Speed</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>low</td>
+      <td>45</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>low</td>
+      <td>60</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>high</td>
+      <td>80</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>high</td>
+      <td>80</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>low</td>
+      <td>65</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>high</td>
+      <td>80</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>high</td>
+      <td>100</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>high</td>
+      <td>100</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>high</td>
+      <td>100</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>low</td>
+      <td>43</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+Of course we didn't actually add `speed_level` to `pokemon`, we created a new data-frame. Everything here is as immutable as possible, let's check if this is really the case:
+
+
+```clojure
+(vec (pt/names pokemon))
+```
+
+
+
+
+    ["#" "Name" "Type 1" "Type 2" "HP" "Attack" "Defense" "Sp. Atk" "Sp. Def" "Speed" "Generation" "Legendary"]
+
+
+
+## Inspecting data
+
+Other than `head` we have `tail`
+
+
+```clojure
+(show (pt/tail pokemon))
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>Name</th>
+      <th>Type 1</th>
+      <th>Type 2</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>795</th>
+      <td>796</td>
+      <td>Diancie</td>
+      <td>Rock</td>
+      <td>Fairy</td>
+      <td>50</td>
+      <td>100</td>
+      <td>150</td>
+      <td>100</td>
+      <td>150</td>
+      <td>50</td>
+      <td>6</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>796</th>
+      <td>797</td>
+      <td>Mega Diancie</td>
+      <td>Rock</td>
+      <td>Fairy</td>
+      <td>50</td>
+      <td>160</td>
+      <td>110</td>
+      <td>160</td>
+      <td>110</td>
+      <td>110</td>
+      <td>6</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>797</th>
+      <td>798</td>
+      <td>Hoopa Confined</td>
+      <td>Psychic</td>
+      <td>Ghost</td>
+      <td>80</td>
+      <td>110</td>
+      <td>60</td>
+      <td>150</td>
+      <td>130</td>
+      <td>70</td>
+      <td>6</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>798</th>
+      <td>799</td>
+      <td>Hoopa Unbound</td>
+      <td>Psychic</td>
+      <td>Dark</td>
+      <td>80</td>
+      <td>160</td>
+      <td>60</td>
+      <td>170</td>
+      <td>130</td>
+      <td>80</td>
+      <td>6</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>799</th>
+      <td>800</td>
+      <td>Volcanion</td>
+      <td>Fire</td>
+      <td>Water</td>
+      <td>80</td>
+      <td>110</td>
+      <td>120</td>
+      <td>130</td>
+      <td>90</td>
+      <td>70</td>
+      <td>6</td>
+      <td>True</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+We can always check what's the shape of the data structure we're interested in. `shape` returns rows and columns count
+
+
+```clojure
+(pt/shape pokemon)
+```
+
+
+
+
+    (800, 12)
+
+
+
+If you want just one of the two you can either use one of `n-rows` or `n-cols`, or get the required value by index:
+
+
+```clojure
+(pt/n-rows pokemon)
+```
+
+
+
+
+    800
+
+
+
+
+```clojure
+((pt/shape pokemon) 0)
+```
+
+
+
+
+    800
+
+
+
+## Exploratory data analysis
+
+Now we can move to something a little more interesting: some data analysis.
+
+One of the first things we might want to do is to look at some frequencies. `value-counts` is our friend
+
+
+```clojure
+(-> pokemon
+    (pt/subset-cols "Type 1")
+    (pt/value-counts {:dropna false}))
+```
+
+
+
+
+    Water       112
+    Normal       98
+    Grass        70
+    Bug          69
+    Psychic      57
+    Fire         52
+    Rock         44
+    Electric     44
+    Ghost        32
+    Dragon       32
+    Ground       32
+    Dark         31
+    Poison       28
+    Fighting     27
+    Steel        27
+    Ice          24
+    Fairy        17
+    Flying        4
+    Name: Type 1, dtype: int64
+
+
+
+As we can see we get counts by group automatically and this can come in handy!
+
+There's also a nice way to see many stats at once for all the numeric columns: `describe`
+
+
+```clojure
+(show (pt/describe pokemon))
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>count</th>
+      <td>800.0000</td>
+      <td>800.000000</td>
+      <td>800.000000</td>
+      <td>800.000000</td>
+      <td>800.000000</td>
+      <td>800.000000</td>
+      <td>800.000000</td>
+      <td>800.00000</td>
+    </tr>
+    <tr>
+      <th>mean</th>
+      <td>400.5000</td>
+      <td>69.258750</td>
+      <td>79.001250</td>
+      <td>73.842500</td>
+      <td>72.820000</td>
+      <td>71.902500</td>
+      <td>68.277500</td>
+      <td>3.32375</td>
+    </tr>
+    <tr>
+      <th>std</th>
+      <td>231.0844</td>
+      <td>25.534669</td>
+      <td>32.457366</td>
+      <td>31.183501</td>
+      <td>32.722294</td>
+      <td>27.828916</td>
+      <td>29.060474</td>
+      <td>1.66129</td>
+    </tr>
+    <tr>
+      <th>min</th>
+      <td>1.0000</td>
+      <td>1.000000</td>
+      <td>5.000000</td>
+      <td>5.000000</td>
+      <td>10.000000</td>
+      <td>20.000000</td>
+      <td>5.000000</td>
+      <td>1.00000</td>
+    </tr>
+    <tr>
+      <th>25%</th>
+      <td>200.7500</td>
+      <td>50.000000</td>
+      <td>55.000000</td>
+      <td>50.000000</td>
+      <td>49.750000</td>
+      <td>50.000000</td>
+      <td>45.000000</td>
+      <td>2.00000</td>
+    </tr>
+    <tr>
+      <th>50%</th>
+      <td>400.5000</td>
+      <td>65.000000</td>
+      <td>75.000000</td>
+      <td>70.000000</td>
+      <td>65.000000</td>
+      <td>70.000000</td>
+      <td>65.000000</td>
+      <td>3.00000</td>
+    </tr>
+    <tr>
+      <th>75%</th>
+      <td>600.2500</td>
+      <td>80.000000</td>
+      <td>100.000000</td>
+      <td>90.000000</td>
+      <td>95.000000</td>
+      <td>90.000000</td>
+      <td>90.000000</td>
+      <td>5.00000</td>
+    </tr>
+    <tr>
+      <th>max</th>
+      <td>800.0000</td>
+      <td>255.000000</td>
+      <td>190.000000</td>
+      <td>230.000000</td>
+      <td>194.000000</td>
+      <td>230.000000</td>
+      <td>180.000000</td>
+      <td>6.00000</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+If you need some of these stats only for some columns, chances are that there's a function for that!
+
+
+```clojure
+(-> (pt/subset-cols pokemon :HP)
+    ((juxt pt/mean pt/std pt/minimum pt/maximum)))
+```
+
+
+
+
+    [69.25875 25.53466903233207 1 255]
+
+
+
+<a id='reshape'></a>
+## Reshaping data
+
+Some of the most common operations with rectangular data is to reshape them how we most please to make other operations easier.
+
+The R people perfectly know what I mean when I talk about [tidy data](https://www.jstatsoft.org/article/view/v059i10/v59i10.pdf), if you have no idea about this check the link, but the main point is that while most are used to work with double entry matrices (like the one above built with `describe`), it is much easier to work with *long data*: one row per observation and one column per variable.
+
+In panthera there's `melt` as a workhorse for this process
+
+
+```clojure
+(-> pokemon pt/head show)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>Name</th>
+      <th>Type 1</th>
+      <th>Type 2</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>Bulbasaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>45</td>
+      <td>49</td>
+      <td>49</td>
+      <td>65</td>
+      <td>65</td>
+      <td>45</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>Ivysaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>60</td>
+      <td>62</td>
+      <td>63</td>
+      <td>80</td>
+      <td>80</td>
+      <td>60</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>82</td>
+      <td>83</td>
+      <td>100</td>
+      <td>100</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>Mega Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>100</td>
+      <td>123</td>
+      <td>122</td>
+      <td>120</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>Charmander</td>
+      <td>Fire</td>
+      <td>NaN</td>
+      <td>39</td>
+      <td>52</td>
+      <td>43</td>
+      <td>60</td>
+      <td>50</td>
+      <td>65</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+```clojure
+(-> pokemon pt/head (pt/melt {:id-vars "Name" :value-vars ["Attack" "Defense"]}) show)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Name</th>
+      <th>variable</th>
+      <th>value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Bulbasaur</td>
+      <td>Attack</td>
+      <td>49</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Ivysaur</td>
+      <td>Attack</td>
+      <td>62</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Venusaur</td>
+      <td>Attack</td>
+      <td>82</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Mega Venusaur</td>
+      <td>Attack</td>
+      <td>100</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Charmander</td>
+      <td>Attack</td>
+      <td>52</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>Bulbasaur</td>
+      <td>Defense</td>
+      <td>49</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>Ivysaur</td>
+      <td>Defense</td>
+      <td>63</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>Venusaur</td>
+      <td>Defense</td>
+      <td>83</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>Mega Venusaur</td>
+      <td>Defense</td>
+      <td>123</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>Charmander</td>
+      <td>Defense</td>
+      <td>43</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+Above we told panthera that we wanted to `melt` our data-frame and that we would like to have the column `Name` act as the main id, while we're interested in the value of `Attack` and `Defense`.
+
+This makes much easier to group values by some variable:
+
+
+```clojure
+(-> pokemon 
+    pt/head 
+    (pt/melt {:id-vars "Name" :value-vars ["Attack" "Defense"]}) 
+    (pt/groupby :variable)
+    pt/mean)
+```
+
+
+
+
+              value
+    variable       
+    Attack     69.0
+    Defense    72.2
+
+
+
+If you've ever used Excel you already know about `pivot`, which is the opposite of `melt`
+
+
+```clojure
+(-> pokemon 
+    pt/head 
+    (pt/melt {:id-vars "Name" :value-vars ["Attack" "Defense"]}) 
+    (pt/pivot {:index "Name" :columns "variable" :values "value"})
+    show)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>variable</th>
+      <th>Attack</th>
+      <th>Defense</th>
+    </tr>
+    <tr>
+      <th>Name</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Bulbasaur</th>
+      <td>49</td>
+      <td>49</td>
+    </tr>
+    <tr>
+      <th>Charmander</th>
+      <td>52</td>
+      <td>43</td>
+    </tr>
+    <tr>
+      <th>Ivysaur</th>
+      <td>62</td>
+      <td>63</td>
+    </tr>
+    <tr>
+      <th>Mega Venusaur</th>
+      <td>100</td>
+      <td>123</td>
+    </tr>
+    <tr>
+      <th>Venusaur</th>
+      <td>82</td>
+      <td>83</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+What if we have more than one data-frame? We can combine them however we want!
+
+
+```clojure
+(show 
+  (pt/concatenate
+    [(pt/head pokemon)
+     (pt/tail pokemon)]
+    {:axis 0
+     :ignore-index true}))
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>Name</th>
+      <th>Type 1</th>
+      <th>Type 2</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>Bulbasaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>45</td>
+      <td>49</td>
+      <td>49</td>
+      <td>65</td>
+      <td>65</td>
+      <td>45</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>Ivysaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>60</td>
+      <td>62</td>
+      <td>63</td>
+      <td>80</td>
+      <td>80</td>
+      <td>60</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>82</td>
+      <td>83</td>
+      <td>100</td>
+      <td>100</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>Mega Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>100</td>
+      <td>123</td>
+      <td>122</td>
+      <td>120</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>Charmander</td>
+      <td>Fire</td>
+      <td>NaN</td>
+      <td>39</td>
+      <td>52</td>
+      <td>43</td>
+      <td>60</td>
+      <td>50</td>
+      <td>65</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>796</td>
+      <td>Diancie</td>
+      <td>Rock</td>
+      <td>Fairy</td>
+      <td>50</td>
+      <td>100</td>
+      <td>150</td>
+      <td>100</td>
+      <td>150</td>
+      <td>50</td>
+      <td>6</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>797</td>
+      <td>Mega Diancie</td>
+      <td>Rock</td>
+      <td>Fairy</td>
+      <td>50</td>
+      <td>160</td>
+      <td>110</td>
+      <td>160</td>
+      <td>110</td>
+      <td>110</td>
+      <td>6</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>798</td>
+      <td>Hoopa Confined</td>
+      <td>Psychic</td>
+      <td>Ghost</td>
+      <td>80</td>
+      <td>110</td>
+      <td>60</td>
+      <td>150</td>
+      <td>130</td>
+      <td>70</td>
+      <td>6</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>799</td>
+      <td>Hoopa Unbound</td>
+      <td>Psychic</td>
+      <td>Dark</td>
+      <td>80</td>
+      <td>160</td>
+      <td>60</td>
+      <td>170</td>
+      <td>130</td>
+      <td>80</td>
+      <td>6</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>800</td>
+      <td>Volcanion</td>
+      <td>Fire</td>
+      <td>Water</td>
+      <td>80</td>
+      <td>110</td>
+      <td>120</td>
+      <td>130</td>
+      <td>90</td>
+      <td>70</td>
+      <td>6</td>
+      <td>True</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+Just a second to discuss some options:
+
+- `:axis`: most of panthera operations can be applied either by rows or columns, we decide which with this keyword where 0 = rows and 1 = columns
+- `:ignore-index`: panthera works by index, to better understand what kind of indexes there are and most of their quirks check [Basic concepts](https://nbviewer.jupyter.org/github/alanmarazzi/panthera/blob/master/examples/basic-concepts.ipynb#Indexing-and-subsetting)
+
+To better understand `:axis` let's make another example
+
+
+```clojure
+(show
+  (pt/concatenate
+    (repeat 2 (pt/head pokemon))
+    {:axis 1}))
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>Name</th>
+      <th>Type 1</th>
+      <th>Type 2</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+      <th>#</th>
+      <th>Name</th>
+      <th>Type 1</th>
+      <th>Type 2</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>Bulbasaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>45</td>
+      <td>49</td>
+      <td>49</td>
+      <td>65</td>
+      <td>65</td>
+      <td>45</td>
+      <td>1</td>
+      <td>False</td>
+      <td>1</td>
+      <td>Bulbasaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>45</td>
+      <td>49</td>
+      <td>49</td>
+      <td>65</td>
+      <td>65</td>
+      <td>45</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>Ivysaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>60</td>
+      <td>62</td>
+      <td>63</td>
+      <td>80</td>
+      <td>80</td>
+      <td>60</td>
+      <td>1</td>
+      <td>False</td>
+      <td>2</td>
+      <td>Ivysaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>60</td>
+      <td>62</td>
+      <td>63</td>
+      <td>80</td>
+      <td>80</td>
+      <td>60</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>82</td>
+      <td>83</td>
+      <td>100</td>
+      <td>100</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+      <td>3</td>
+      <td>Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>82</td>
+      <td>83</td>
+      <td>100</td>
+      <td>100</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>Mega Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>100</td>
+      <td>123</td>
+      <td>122</td>
+      <td>120</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+      <td>4</td>
+      <td>Mega Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>100</td>
+      <td>123</td>
+      <td>122</td>
+      <td>120</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>Charmander</td>
+      <td>Fire</td>
+      <td>NaN</td>
+      <td>39</td>
+      <td>52</td>
+      <td>43</td>
+      <td>60</td>
+      <td>50</td>
+      <td>65</td>
+      <td>1</td>
+      <td>False</td>
+      <td>5</td>
+      <td>Charmander</td>
+      <td>Fire</td>
+      <td>NaN</td>
+      <td>39</td>
+      <td>52</td>
+      <td>43</td>
+      <td>60</td>
+      <td>50</td>
+      <td>65</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+## Types, types everywhere
+
+There are many dedicated types, but no worries, there are nice ways to deal with them.
+
+
+```clojure
+(pt/dtype pokemon)
+```
+
+
+
+
+    #              int64
+    Name          object
+    Type 1        object
+    Type 2        object
+    HP             int64
+    Attack         int64
+    Defense        int64
+    Sp. Atk        int64
+    Sp. Def        int64
+    Speed          int64
+    Generation     int64
+    Legendary       bool
+    dtype: object
+
+
+
+I guess there isn't much to say about `:int64` and `:bool`, but surely `:object` looks more interesting. When panthera (numpy included) finds either strings or something it doesn't know how to deal with it goes to the less tight type possible which is an `:object`.
+
+`:object`s are usually bloated, if we want to save some overhead and it makes sense to deal with categorical values we can convert them to `:category`
+
+
+```clojure
+(-> pokemon
+    (pt/subset-cols "Type 1")
+    (pt/astype :category)
+    pt/head)
+```
+
+
+
+
+    0    Grass
+    1    Grass
+    2    Grass
+    3    Grass
+    4     Fire
+    Name: Type 1, dtype: category
+    Categories (18, object): [Bug, Dark, Dragon, Electric, ..., Psychic, Rock, Steel, Water]
+
+
+
+
+```clojure
+(-> pokemon
+    (pt/subset-cols "Speed")
+    (pt/astype :float)
+    pt/head)
+```
+
+
+
+
+    0    45.0
+    1    60.0
+    2    80.0
+    3    80.0
+    4    65.0
+    Name: Speed, dtype: float64
+
+
+
+## Dealing with missing data
+
+One of the most painful operations for data scientists and engineers is dealing with the unknown: `NaN` (or `nil`, `Null`, etc).
+
+panthera tries to make this as painless as possible:
+
+
+```clojure
+(-> pokemon
+    (pt/subset-cols "Type 2")
+    (pt/value-counts {:dropna false}))
+```
+
+
+
+
+    NaN         386
+    Flying       97
+    Ground       35
+    Poison       34
+    Psychic      33
+    Fighting     26
+    Grass        25
+    Fairy        23
+    Steel        22
+    Dark         20
+    Dragon       18
+    Water        14
+    Rock         14
+    Ghost        14
+    Ice          14
+    Fire         12
+    Electric      6
+    Normal        4
+    Bug           3
+    Name: Type 2, dtype: int64
+
+
+
+We could check for `NaN` in other ways has well:
+
+
+```clojure
+(-> pokemon (pt/subset-cols "Type 2") ((juxt pt/hasnans? (comp pt/all? pt/not-na?))))
+```
+
+
+
+
+    [true false]
+
+
+
+One of the ways to deal with missing data is to just drop rows
+
+
+```clojure
+(-> pokemon
+    (pt/dropna {:subset ["Type 2"]})
+    (pt/subset-cols "Type 2")
+    (pt/value-counts {:dropna false}))
+```
+
+
+
+
+    Flying      97
+    Ground      35
+    Poison      34
+    Psychic     33
+    Fighting    26
+    Grass       25
+    Fairy       23
+    Steel       22
+    Dark        20
+    Dragon      18
+    Ice         14
+    Rock        14
+    Ghost       14
+    Water       14
+    Fire        12
+    Electric     6
+    Normal       4
+    Bug          3
+    Name: Type 2, dtype: int64
+
+
+
+But let's say we want to replace missing observations with a flag or value of some kind, we can do that easily with `fill-na`
+
+
+```clojure
+(-> pokemon
+    (pt/subset-cols "Type 2")
+    (pt/fill-na :empty)
+    (pt/head 10))
+```
+
+
+
+
+    0    Poison
+    1    Poison
+    2    Poison
+    3    Poison
+    4     empty
+    5     empty
+    6    Flying
+    7    Dragon
+    8    Flying
+    9     empty
+    Name: Type 2, dtype: object
+
+
+
+## Time and dates
+
+Programmers hate time, that's a fact. Panthera tries to make this experience as painless as possible
+
+
+```clojure
+(def times
+  ["1992-01-10","1992-02-10","1992-03-10","1993-03-15","1993-03-16"])
+
+(pt/->datetime times)
+```
+
+
+
+
+    DatetimeIndex(['1992-01-10', '1992-02-10', '1992-03-10', '1993-03-15',
+                   '1993-03-16'],
+                  dtype='datetime64[ns]', freq=None)
+
+
+
+
+```clojure
+(-> pokemon
+    pt/head
+    (pt/set-index (pt/->datetime times))
+    show)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>Name</th>
+      <th>Type 1</th>
+      <th>Type 2</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1992-01-10</th>
+      <td>1</td>
+      <td>Bulbasaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>45</td>
+      <td>49</td>
+      <td>49</td>
+      <td>65</td>
+      <td>65</td>
+      <td>45</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1992-02-10</th>
+      <td>2</td>
+      <td>Ivysaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>60</td>
+      <td>62</td>
+      <td>63</td>
+      <td>80</td>
+      <td>80</td>
+      <td>60</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1992-03-10</th>
+      <td>3</td>
+      <td>Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>82</td>
+      <td>83</td>
+      <td>100</td>
+      <td>100</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1993-03-15</th>
+      <td>4</td>
+      <td>Mega Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>100</td>
+      <td>123</td>
+      <td>122</td>
+      <td>120</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1993-03-16</th>
+      <td>5</td>
+      <td>Charmander</td>
+      <td>Fire</td>
+      <td>NaN</td>
+      <td>39</td>
+      <td>52</td>
+      <td>43</td>
+      <td>60</td>
+      <td>50</td>
+      <td>65</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+```clojure
+(-> pokemon
+    pt/head
+    (pt/set-index (pt/->datetime times))
+    (pt/select-rows "1993-03-16" :loc))
+```
+
+
+
+
+    #                      5
+    Name          Charmander
+    Type 1              Fire
+    Type 2               NaN
+    HP                    39
+    Attack                52
+    Defense               43
+    Sp. Atk               60
+    Sp. Def               50
+    Speed                 65
+    Generation             1
+    Legendary          False
+    Name: 1993-03-16 00:00:00, dtype: object
+
+
+
+
+```clojure
+(-> pokemon
+    pt/head
+    (pt/set-index (pt/->datetime times))
+    (pt/select-rows (pt/slice "1992-03-10" "1993-03-16") :loc)
+    show)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>#</th>
+      <th>Name</th>
+      <th>Type 1</th>
+      <th>Type 2</th>
+      <th>HP</th>
+      <th>Attack</th>
+      <th>Defense</th>
+      <th>Sp. Atk</th>
+      <th>Sp. Def</th>
+      <th>Speed</th>
+      <th>Generation</th>
+      <th>Legendary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1992-03-10</th>
+      <td>3</td>
+      <td>Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>82</td>
+      <td>83</td>
+      <td>100</td>
+      <td>100</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1993-03-15</th>
+      <td>4</td>
+      <td>Mega Venusaur</td>
+      <td>Grass</td>
+      <td>Poison</td>
+      <td>80</td>
+      <td>100</td>
+      <td>123</td>
+      <td>122</td>
+      <td>120</td>
+      <td>80</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1993-03-16</th>
+      <td>5</td>
+      <td>Charmander</td>
+      <td>Fire</td>
+      <td>NaN</td>
+      <td>39</td>
+      <td>52</td>
+      <td>43</td>
+      <td>60</td>
+      <td>50</td>
+      <td>65</td>
+      <td>1</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+```clojure
+
+```
