@@ -14,41 +14,42 @@
  n-rows
  one-hot
  hasnans?
+ swap-level
  cross-section
+ n-unique
+ n-smallest
+ any?
  subset-cols
+ n-largest
  names
  read-csv
+ select-rows
  unique
  filter-rows
  dtype
  value-counts
  index
  series
+ all?
  read-excel
+ set-index
  to-csv
  data-frame
  subset-rows
  decreasing?
- n-smallest
  n-cols
- n-unique
  head
  increasing?
  memory-usage
  values
- reset-index
- n-largest
- unique?
- shape
- nbytes
- ftype
  tail
- fill-na
+ reset-index
+ unique?
  not-na?
- all?
- select-rows
- set-index
- swap-level)
+ shape
+ fill-na
+ nbytes
+ ftype)
 
 (export-symbols
  panthera.pandas.math
@@ -60,7 +61,7 @@
  std
  le
  add
- any?
+ sum
  diff
  ge
  cumprod
@@ -82,6 +83,7 @@
  cummin
  cnt
  cummax
+ ops
  autocorr
  cov
  div
@@ -95,7 +97,7 @@
  minimum
  describe
  mean-abs-dev
- sum)
+ floor-div)
 
 (export-symbols
  panthera.pandas.utils

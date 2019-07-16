@@ -60,6 +60,9 @@
 (def div
   (base-math :div))
 
+(def floor-div
+  (base-math :fld))
+
 (def mod
   (base-math :mod))
 
