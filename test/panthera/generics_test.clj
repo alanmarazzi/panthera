@@ -108,8 +108,9 @@
   (are [i o]
        (= (vec (g/values i)) o)
     (g/series []) []
-    (g/series [1 2 3]) [1 2 3]
-    (g/data-frame (to-array-2d [[1 2] [3 4]])) [[1 2] [3 4]]))
+    (g/series [1 2 3]) [1 2 3])
+  (is (= (mapv vec (g/values (g/data-frame (to-array-2d [[1 2] [3 4]]))))
+         [[1 2] [3 4]])))
 
 (deftest shape
   (are [i o]
@@ -362,7 +363,7 @@
     [{0 0 1 1} {0 2 1 3} {0 4 1 5}]
     
     (to-array-2d (partition 4 (range 20)))
-    [(u/slice 3) (u/slice 2)]
+    [(u/slice 2) (u/slice 1)]
     nil
     :loc
     [{0 0 1 1} {0 4 1 5} {0 8 1 9}]))
