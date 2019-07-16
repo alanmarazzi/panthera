@@ -8,8 +8,8 @@
 (defn- base-math
   [k]
   (fn [& args]
-    (reduce 
-     #(py/call-attr 
+    (reduce
+     #(py/call-attr
        %1
        ({:+    "__add__"
          :-    "__sub__"
