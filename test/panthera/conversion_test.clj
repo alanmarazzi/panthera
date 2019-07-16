@@ -29,25 +29,25 @@
 
 (deftest date-range
   (are [m o]
-      (= (map str (c/date-range m))
-         o))
+      (= (mapv str (c/date-range m))
+         o)
 
-  {:start "2019-1" :end "2019-3" :freq "m"}
-  ["2019-01-31 00:00:00" "2019-02-28 00:00:00" "2019-03-31 00:00:00"]
+    {:start "2019-1" :end "2019-3" :freq "m"}
+    ["2019-01-31 00:00:00" "2019-02-28 00:00:00"]
 
-  {:start "2019-1" :end "2019-3" :periods 3}
-  ["2019-01-01 00:00:00" "2019-02-15 00:00:00" "2019-04-01 00:00:00"])
+    {:start "2019-1" :end "2019-3" :periods 3}
+    ["2019-01-01 00:00:00" "2019-01-30 12:00:00" "2019-03-01 00:00:00"]))
 
 (deftest timedelta-range
   (are [m o]
       (= (map str (c/timedelta-range m))
-         o))
+         o)
 
-  {:start "1 hours" :end "2 days"}
-  ["0 days 01:00:00" "1 days 01:00:00" "2 days 01:00:00"]
+    {:start "1 hours" :end "2 days"}
+    ["0 days 01:00:00" "1 days 01:00:00" "2 days 01:00:00"]
 
-  {:start "1 hours" :end "4 hours" :freq "H"}
-  ["0 days 01:00:00" "0 days 02:00:00" "0 days 03:00:00" "0 days 04:00:00"])
+    {:start "1 hours" :end "4 hours" :freq "H"}
+    ["0 days 01:00:00" "0 days 02:00:00" "0 days 03:00:00" "0 days 04:00:00"]))
 
 (deftest infer-time-freq
   (is (= (c/infer-time-freq ["2017" "2018" "2019"])
