@@ -76,3 +76,8 @@
 (defn unstack
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "unstack" attrs))
+
+(defn transpose
+  "Transpose the given panthera object"
+  [df-or-srs]
+  (py/call-attr df-or-srs "transpose"))

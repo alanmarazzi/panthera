@@ -136,4 +136,5 @@
  groupby
  melt
  assign
- unstack)
+ unstack
+ transpose)
