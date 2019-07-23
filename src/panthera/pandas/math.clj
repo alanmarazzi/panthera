@@ -99,8 +99,10 @@
   (py/call-attr srs "autocorr" (or lag 1)))
 
 (defn between
-  [srs left right & inclusive]
-  (py/call-attr srs "between" left right (or inclusive true)))
+  ([srs left right]
+   (py/call-attr srs "between" left right))
+  ([srs left right inclusive]
+   (py/call-attr srs "between" left right inclusive)))
 
 (defn clip
   [df-or-srs & [attrs]]
