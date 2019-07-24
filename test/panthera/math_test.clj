@@ -102,7 +102,7 @@
   (is (= (m/cnt (g/series [1 nil 2])) 2)))
 
 (deftest cov
-  (is (= (m/cov (g/series [1 2 3]) (g/series [3 2 1]) -1.0)))
+  (is (= (m/cov (g/series [1 2 3]) (g/series [3 2 1])) -1.0))
   (is (= (u/->clj (m/cov (g/data-frame (to-array-2d [[1 2] [3 4] [5 6]]))))
          [{0 4.0, 1 4.0} {0 4.0, 1 4.0}])))
 

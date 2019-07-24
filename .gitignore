@@ -17,3 +17,6 @@ pom.xml.asc
 *.iml
 examples/.ipynb_checkpoints
 *.log
+.classpath
+.project
+.settings
