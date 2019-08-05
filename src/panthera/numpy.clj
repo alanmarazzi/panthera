@@ -75,7 +75,7 @@
     [model x y]
     (py/call-attr model "fit" x y))
 
-  (def model (fit model (train-test split :x-train) (train-test split :y-train)))
+  (def model (fit logistic (train-test split :x-train) (train-test split :y-train)))
 
   (defn predict
     [model x]
