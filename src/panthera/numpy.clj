@@ -5,11 +5,9 @@
 
 (defonce numpy (py/import-module "numpy"))
 
-(defonce sk (py/import-module "sklearn"))
-
-(py/set-attr! sk "__SKLEARN_SETUP__" true)
-
 (defn py-get-in
+  "A similar to `get-in` implementation for Python modules,
+  classes and functions."
   [py-module v]
   (let [mods (drop-last v)]
     ((apply comp
@@ -17,7 +15,26 @@
              (map (fn [x] #(py/get-attr % x)) mods))) py-module)))
 
 (defn doc
-  [py-module ks])
+  "Use this to see modules and functions original docstrings.
+
+  **Examples**
+
+  ```
+  (doc :power)
+
+  (doc :linalg)
+
+  (doc [:linalg :svd])
+  ```"
+  [ks]
+  (if (seqable? ks)
+    (println
+     (py/get-attr
+      (py/get-attr
+       (py-get-in numpy ks)
+       (last ks))
+      "__doc__"))
+    (println (py/get-attr (py/get-attr numpy ks) "__doc__"))))
 
 (defn module
   [py-module]
@@ -25,32 +42,57 @@
       (fn
         ([]
          (if (seqable? x)
-           (py/call-attr (py-get-in py-module x) (last x))
-           (py/get-attr py-module x)))
+           (let [ks (map u/memo-key-converter x)]
+             (py/get-attr (py-get-in py-module ks) (last ks)))
+           (py/get-attr py-module (u/memo-key-converter x))))
         ([attrs]
          (if (seqable? x)
-           (py/call-attr-kw (py-get-in py-module x)
-                            (last x)
+           (let [ks    (map u/memo-key-converter x)]
+             (py/call-attr-kw (py-get-in py-module ks) (last ks)
+                              (vec (:args attrs))
+                              (u/keys->pyargs (dissoc attrs :args))))
+           (py/call-attr-kw py-module (u/memo-key-converter x)
                             (vec (:args attrs))
-                            (dissoc attrs :args))
-           (py/call-attr-kw py-module x
-                            (vec (:args attrs))
-                            (dissoc attrs :args)))))))
+                            (u/keys->pyargs (dissoc attrs :args))))))))
 
 (defn npy
-  "Experiment:
+  "General method to access Numpy functions and attributes.
 
-  Usage -> (npy :shape {:args [[1 2 3]]}) => (3,)
-  (npy [:linalg :norm] {:args [[[1 2 3] [4 5 6]]]}) => 9.539..."
-  ([k] ((module numpy) k))
-  ([k args] (((module numpy) k) args)))
+  By calling `(npy k)` you get either the value associated with that attribute
+  (such as `(npy :nan)`) or the native Python function associated with that key.
+  This is useful to pass functions around to other methods.
 
-(defn sklearn
-  ([k] ((module sk) k))
-  ([k args] (((module sk) k) args)))
+  By calling `(npy k {:args [my-args] :other-arg 2})` you're calling that method
+  with the given arguments. `:args` is a conveniency argument to pass positional
+  arguments to functions in the same order as you'd pass them to Numpy.
+  This is because many Numpy functions have native C implementations that
+  accept only positional arguments.
+
+  For example `(npy :power {:args [[1 2] 2]})` will give back as a result
+  `[1 4]` because we square (second element of `:args`) all the elements in the
+  given `Iterable` (first element of `:args`)
+
+
+  If you need to access a function in a submodule just pass a sequence of keys
+  to `npy`, such as `(npy [:linalg :svd])`. The functioning of this is the same
+  as above, but you'll be acting on the `:svd` function inside the `:linalg`
+  submodule."
+  ([k] (((module numpy) k)))
+  ([k attrs] (((module numpy) k) attrs)))
 
 
 (comment
+  "An example on how to wrap another Python library, in this case scikit-learn"
+  (defonce sk (py/import-module "sklearn"))
+
+  ; sklearn architecture is very convoluted, modules aren't loaded by default
+  ; but only by explicit import. Setting the var below bypasses this behaviour
+  (py/set-attr! sk "__SKLEARN_SETUP__" true)
+
+  (defn sklearn
+    ([k] ((module sk) k))
+    ([k args] (((module sk) k) args)))
+
   (def pokemon (pt/read-csv "resources/pokemon.csv"))
 
   (def split (sklearn [:model_selection :train_test_split]
@@ -75,7 +117,8 @@
     [model x y]
     (py/call-attr model "fit" x y))
 
-  (def model (fit logistic (train-test split :x-train) (train-test split :y-train)))
+  (def model (fit logistic (train-test split :x-train)
+                  (train-test split :y-train)))
 
   (defn predict
     [model x]
