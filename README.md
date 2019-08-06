@@ -2,7 +2,7 @@
 
 ![panthera-logo](https://github.com/alanmarazzi/panthera/blob/master/resources/panthera.png)
 
-> Hic sunt leones
+> **Hic sunt leones**
 
 Latin phrase reported on many maps indicating *Terra incognita*, unexplored or harsh land.
 
@@ -41,10 +41,12 @@ The above chain will read your csv file as a DataFrame, select only the given co
 
 `panthera.panthera` is the home of the main API, and you can find everything there. The advice is to never `:use` or `:refer :all` the namespace because there are some functions named as core Clojure functions such as `mod` which in this case does the same thing as the core one, but in this case it is vectorized and it works only if the first argument is a Python object.
 
-All of the main numpy is wrapped and accessible through a single interface from `panthera.numpy`.
+### Numpy
+
+All of Numpy is wrapped and accessible through a single interface from `panthera.numpy`.
 
 ```clojure
-(require '[panthera.numpy :refer [npy]])
+(require '[panthera.numpy :refer [npy doc]])
 
 (npy :power {:args [[1 2 3] 3]})
 ;=> [1 8 27]
@@ -53,11 +55,21 @@ All of the main numpy is wrapped and accessible through a single interface from 
 ; This arity returns the actual numpy object that can be passed around to other functions as an argument
 ```
 
-For every function there is a key, to check everything that is available just call the zero-arity version - `(npy)` - and you'll get a list of keys. To see how they work either check the [official docs](https://docs.scipy.org/doc/numpy/reference/) online or call `(npy :your-key {:doc true})` to check the original Python docstring.
+To access functions inside submodules pass to `npy` a sequence of keys leading to the wanted function:
 
-This is because while **panthera.panthera** is carefully wrapped method by method, but it's so large that at the moment just 35%-40% of its functionality is covered, I wanted all of numpy available, so the wrapper is fully automatically generated.
+```clojure
+(npy [:linalg :svd] {:args [[1 2 3] [4 5 6]]})
+```
 
-Numpy submodules (like random and linalg) will follow soon.
+You can check the original docstring for every module and function with the `doc` helper
+
+```clojure
+(doc :power)
+
+(doc [:linalg :eigh])
+```
+
+To see what is available and how everything works check the [official docs](https://docs.scipy.org/doc/numpy/reference/) online.
 
 ## Contributing
 
@@ -69,6 +81,7 @@ You can find some examples in the [examples](https://github.com/alanmarazzi/pant
 
 - [panthera intro](https://github.com/alanmarazzi/panthera/blob/master/examples/panthera-intro.ipynb) ([nbviewer](https://nbviewer.jupyter.org/github/alanmarazzi/panthera/blob/master/examples/panthera-intro.ipynb))
 - [basic concepts (serieses & data-frames)](https://github.com/alanmarazzi/panthera/blob/master/examples/basic-concepts.ipynb) ([nbviewer](https://nbviewer.jupyter.org/github/alanmarazzi/panthera/blob/master/examples/basic-concepts.ipynb))
+- [general Python package wrapper](https://github.com/alanmarazzi/panthera/blob/master/src/panthera/numpy.clj#L84) - an example about how to use panthera to wrap other Python libraries
 
 ## Why "panthera"?
 

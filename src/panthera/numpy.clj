@@ -1,100 +1,133 @@
 (ns panthera.numpy
   (:require
-    [panthera.pandas.utils :as u]
-    [libpython-clj.python :as py]))
+   [libpython-clj.python :as py]
+   [panthera.pandas.utils :as u]))
 
 (defonce numpy (py/import-module "numpy"))
 
-(defn filter-vals
-  [pred m]
-  (into {} (filter (fn [[k v]] (pred v))
-                   m)))
+(defn py-get-in
+  "A similar to `get-in` implementation for Python modules,
+  classes and functions."
+  [py-module v]
+  (let [mods (drop-last v)]
+    ((apply comp
+            (reverse
+             (map (fn [x] #(py/get-attr % x)) mods))) py-module)))
 
-(defn attrs
-  [set-of-attrs py-module]
-  (let [m (filter-vals set-of-attrs (py/att-type-map py-module))
-        v (keys m)
-        k (map u/memo-columns-converter v)
-        f (fn [x] (fn [] (py/get-attr py-module x)))
-        o (map #(assoc {:doc  (constantly "Constant")
-                        :type :attr}
-                  :f (f %)) v)]
-    (zipmap k
-            o)))
+(defn doc
+  "Use this to see modules and functions original docstrings.
 
-(defn funcs
-  [set-of-attrs py-module]
-  (let [m (filter-vals set-of-attrs (py/att-type-map py-module))
-        v (keys m)
-        k (map u/memo-columns-converter v)
-        f (fn [x]
-            (fn
-              ([]
-               (py/get-attr py-module x))
-              ([attrs]
-               (py/call-attr-kw py-module x
-                                (vec (:args attrs))
-                                (dissoc attrs :args)))))
-        o (map #(assoc {:type :func}
-                  :doc (constantly
-                         (py/get-attr
-                           (py/get-attr py-module %)
-                           "__doc__"))
-                  :f (f %)) v)]
-    (zipmap k o)))
+  **Examples**
 
-(def consts (attrs #{:float} numpy))
+  ```
+  (doc :power)
 
-(def functions (funcs #{:builtin-function-or-method
-                        :function
-                        :ufunc} numpy))
+  (doc :linalg)
 
-(def np-merged
-  (merge consts functions))
+  (doc [:linalg :svd])
+  ```"
+  [ks]
+  (if (seqable? ks)
+    (println
+     (py/get-attr
+      (py/get-attr
+       (py-get-in numpy ks)
+       (last ks))
+      "__doc__"))
+    (println (py/get-attr (py/get-attr numpy ks) "__doc__"))))
 
-(defn np-caller
-  [k]
-  (let [c (k np-merged)]
-    (case (:type c)
-      :attr (:f c)
-      :func (:f c)
-      :unsupported)))
+(defn module
+  [py-module]
+  (fn [x]
+      (fn
+        ([]
+         (if (seqable? x)
+           (let [ks (map u/memo-key-converter x)]
+             (py/get-attr (py-get-in py-module ks) (last ks)))
+           (py/get-attr py-module (u/memo-key-converter x))))
+        ([attrs]
+         (if (seqable? x)
+           (let [ks    (map u/memo-key-converter x)]
+             (py/call-attr-kw (py-get-in py-module ks) (last ks)
+                              (vec (:args attrs))
+                              (u/keys->pyargs (dissoc attrs :args))))
+           (py/call-attr-kw py-module (u/memo-key-converter x)
+                            (vec (:args attrs))
+                            (u/keys->pyargs (dissoc attrs :args))))))))
 
 (defn npy
-  "General method to access Numpy functions and
-  attributes.
+  "General method to access Numpy functions and attributes.
 
-  By calling `(npy)` you get a list of available
-  keys that correspond to homonymous Numpy
-  attributes and functions that are available.
+  By calling `(npy k)` you get either the value associated with that attribute
+  (such as `(npy :nan)`) or the native Python function associated with that key.
+  This is useful to pass functions around to other methods.
 
-  By calling `(npy k)` you get either the value
-  associated with that attribute (such as
-  `(npy :nan)`) or the native Python function
-  associated with that key. This is useful to
-  pass functions around to other methods.
+  By calling `(npy k {:args [my-args] :other-arg 2})` you're calling that method
+  with the given arguments. `:args` is a conveniency argument to pass positional
+  arguments to functions in the same order as you'd pass them to Numpy.
+  This is because many Numpy functions have native C implementations that
+  accept only positional arguments.
 
-  By calling `(npy k {:doc true})` you get the
-  original docstring of that function, while
-  for attributes you'll get 'Constant'.
+  For example `(npy :power {:args [[1 2] 2]})` will give back as a result
+  `[1 4]` because we square (second element of `:args`) all the elements in the
+  given `Iterable` (first element of `:args`)
 
-  By calling `(npy k {:args [my-args] :other-arg 2})`
-  you're calling that method with the given arguments.
-  `:args` is a conveniency argument to pass positional
-  arguments to functions in the same order as you'd pass
-  them to Numpy. This is because many Numpy functions
-  have native C implementations that accept only
-  positional arguments.
 
-  For example `(npy :power {:args [[1 2] 2]})` will
-  give back as a result `[1 4]` because we square
-  (second element of `:args`) all the elements in the
-  given `Iterable` (first element of `:args`)"
-  ([] (keys np-merged))
-  ([k] ((np-caller k)))
-  ([k args]
-   (let [{:keys [doc]} args
-         clean (dissoc args :doc)]
-     (if doc
-       (println ((:doc (k np-merged))))
-       ((np-caller k) clean)))))
+  If you need to access a function in a submodule just pass a sequence of keys
+  to `npy`, such as `(npy [:linalg :svd])`. The functioning of this is the same
+  as above, but you'll be acting on the `:svd` function inside the `:linalg`
+  submodule."
+  ([k] (((module numpy) k)))
+  ([k attrs] (((module numpy) k) attrs)))
+
+
+(comment
+  "An example on how to wrap another Python library, in this case scikit-learn"
+  (defonce sk (py/import-module "sklearn"))
+
+  ; sklearn architecture is very convoluted, modules aren't loaded by default
+  ; but only by explicit import. Setting the var below bypasses this behaviour
+  (py/set-attr! sk "__SKLEARN_SETUP__" true)
+
+  (defn sklearn
+    ([k] ((module sk) k))
+    ([k args] (((module sk) k) args)))
+
+  (def pokemon (pt/read-csv "resources/pokemon.csv"))
+
+  (def split (sklearn [:model_selection :train_test_split]
+                      {:args [(pt/subset-cols pokemon
+                                              "HP" "Attack"
+                                              "Defense" "Sp. Atk"
+                                              "Sp. Def" "Speed")
+                              (pt/subset-cols pokemon "Legendary")]
+                       :test_size 0.3}))
+
+  (defn train-test
+    [split k]
+    ((k {:x-train first
+         :x-test  second
+         :y-train #(% 2)
+         :y-test  last}) split))
+
+  (def logistic (sklearn [:linear_model :LogisticRegression]
+                         {:n_jobs -1 :solver "lbfgs"}))
+
+  (defn fit
+    [model x y]
+    (py/call-attr model "fit" x y))
+
+  (def model (fit logistic (train-test split :x-train)
+                  (train-test split :y-train)))
+
+  (defn predict
+    [model x]
+    (py/call-attr model "predict" x))
+
+  (predict model (train-test split :x-test))
+
+  (defn score
+    [model x y]
+    (py/call-attr model "score" x y))
+
+  (score model (train-test split :x-test) (train-test split :y-test)))
