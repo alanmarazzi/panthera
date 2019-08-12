@@ -174,7 +174,6 @@
             (g/data-frame i)
             cols))
           o)
-    [] nil []
     [{:a 1}] [:a] [{:a 1}]
     [{:a 1 :b 2 :c 3}] [:a :c] [{:a 1 :c 3}]
     (repeat 5 {:a 1 :b 2}) [:b] (repeat 5 {:b 2})
@@ -272,7 +271,7 @@
       (= (vec (g/names (g/data-frame i))) o)
     [{:a 1 :b 2}] ["a" "b"]
     [{"a name" 1 :c 2}] ["a name" "c"]
-    [{123 1 1/5 3}] [0.2 123.0]))
+    [{123 1 1/5 3}] [123.0 0.2]))
 
 (deftest filter-rows
   (are [i b o]
@@ -287,8 +286,10 @@
 
     (g/data-frame [{:a 1 :b 2}
                    {:a 3 :b 4}])
-    #(-> (g/subset-cols % :a)
-         (m/lt 3))
+    #(-> %
+         (g/subset-cols :a)
+         (m/lt 3)
+         g/values)
     [{:a 1 :b 2}]
 
     (g/data-frame [{:a 1 :b 2}

@@ -597,7 +597,11 @@
   (py/call-attr df-or-srs "head" (or n 5)))
 
 (defn subset-cols
-  "Select columns by name
+  "Select columns by name.
+
+  Note that `colnames` are treated as literals: there's no
+  conversion involved, so if you pass a keyword it gets
+  translated as a string exactly as it is.
 
   **Arguments**
 
@@ -622,8 +626,7 @@
   ;2  6  8
   ```"
   [df & colnames]
-  (let [cols (u/vec->pylist (map u/memo-key-converter colnames))]
-    (py/get-item df cols)))
+  (py/get-item df colnames))
 
 (defn n-largest
   "Return the first `:n` values ordered by `:columns` in descending order.
