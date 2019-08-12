@@ -626,7 +626,10 @@
   ;2  6  8
   ```"
   [df & colnames]
-  (py/get-item df colnames))
+  (let [cols (if (= 1 (count colnames))
+               (first colnames)
+               (apply py/->py-list [colnames]))]
+    (py/get-item df cols)))
 
 (defn n-largest
   "Return the first `:n` values ordered by `:columns` in descending order.
