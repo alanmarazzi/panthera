@@ -83,11 +83,11 @@
 
 (comment
   "An example on how to wrap another Python library, in this case scikit-learn"
-  (defonce sk (py/import-module "sklearn"))
-
+  
   ; sklearn architecture is very convoluted, modules aren't loaded by default
-  ; but only by explicit import. Setting the var below bypasses this behaviour
-  (py/set-attr! sk "__SKLEARN_SETUP__" true)
+  ; but only by explicit import. So we import everything as below
+  (py/run-simple-string "from sklearn import *")
+  (defonce sk (py/import-module "sklearn"))  
 
   (defn sklearn
     ([k] ((module sk) k))
