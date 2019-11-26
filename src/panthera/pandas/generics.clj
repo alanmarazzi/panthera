@@ -821,7 +821,7 @@
     (recur (series seq-or-srs) [attrs])))
 
 (defn to-csv
-  "Reads the csv from the given path and returns the proper data structure.
+  "Writes the csv at the given path.
 
   **Arguments**
 

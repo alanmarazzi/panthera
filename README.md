@@ -18,14 +18,57 @@ This is very alpha, things will change fast, will break and the API is neither c
 
 ## Get started
 
-**Panthera** uses the great [libpython-clj](https://github.com/cnuernber/libpython-clj) as a backend to access Python and get [pandas](https://github.com/pandas-dev/pandas) and [numpy](https://github.com/numpy/numpy) functionality. 
+**Panthera** uses the great [libpython-clj](https://github.com/cnuernber/libpython-clj) as a backend to access Python and get [pandas](https://github.com/pandas-dev/pandas) and [numpy](https://github.com/numpy/numpy) functionality.
+
+### System level
+
+If you usually don't develop in Python then a system level install might be a good solution (though always discouraged), if this is your case then follow the subsequent steps.
 
 To get started you need python, pandas and numpy (the latter comes with the former) on your path. Usually a:
 
 ```bash
-apt-get install libpython3.6-dev
+sudo apt install libpython3.6-dev
 pip3 install numpy pandas xlrd # the latter is for Excel files, if you don't care you can do without
 ```
+
+### Environments
+
+If you want to have different Python environments, then getting **panthera** to work correctly is a bit more tricky.
+
+First create your new environment with at least python=3.6, numpy and pandas. (This was tested both on GNU/Linux and WSL with [conda](https://docs.conda.io/projects/conda/en/latest/), but there's no reason why it shouldn't work with other env management tools. On other systems, [Docker is your best bet](https://github.com/scicloj/docker-hub/tree/master/panthera)):
+
+```bash
+conda create -n panthera python=3.6 numpy pandas
+```
+
+Then check the path to the newly created environment:
+
+```bash
+conda activate panthera
+which python
+```
+
+Now you just have to add to one of your profiles the path to the wanted python executable:
+
+```bash
+{:dev {:resource-paths ["/home/user/miniconda3/envs/panthera"]}}
+```
+
+You can create different profiles with different paths according to what you need. Now if you want to make it possible to work with **panthera** without having to activate your environments you have 2 choices:
+
+- assign `PYTHONHOME` env variable to your environment
+
+```bash
+PYTHONHOME="/home/user/miniconda3/envs/panthera" lein whatever
+```
+
+- assign `PYTHONHOME` env variable before requiring **panthera**
+
+```bash
+(System/setProperty "PYTONHOME" "/home/user/miniconda3/envs/panthera")
+```
+
+### The actual code
 
 After this you can start playing around with **panthera**
 
@@ -41,7 +84,7 @@ The above chain will read your csv file as a DataFrame, select only the given co
 
 `panthera.panthera` is the home of the main API, and you can find everything there. The advice is to never `:use` or `:refer :all` the namespace because there are some functions named as core Clojure functions such as `mod` which in this case does the same thing as the core one, but in this case it is vectorized and it works only if the first argument is a Python object.
 
-### Numpy
+## Numpy
 
 All of Numpy is wrapped and accessible through a single interface from `panthera.numpy`.
 
