@@ -4,8 +4,68 @@
     [panthera.pandas.utils :as u]))
 
 (defn crosstab
-  [df-or-srs & [attrs]]
-  (u/kw-call u/pd "crosstab" df-or-srs attrs))
+  "Compute a cross tabulation of two (or more) factors. By default
+  computes a frequency table of the factors unless an array of values and an
+  aggregation function are passed.
+
+  **Arguments**
+
+  - `seq-or-srs` -> seqable, series
+
+  **Attrs**
+
+  - `:columns` -> Iterable, series, Iterable of Iter/srs: values to group by
+  - `:values` -> Iterable, series, Iterable of Iter/srs: values to group
+  according to factors, requires `:aggfunc`
+  - `:rownames` -> Iterable, series: the names of `seq-or-srs`
+  - `:colnames` -> Iterable, series: the names of `:columns`
+  - `:aggfunc` -> function, keyword, str: the aggregation function, requires
+  `:values`. It can be a panthera function (pt/sum), a numpy function (npy :sum),
+  the name of a numpy function (:mean or \"mean\") or a Clojure function. In the
+  latter case be aware that you have to reduce over a map.
+  - `:margins` -> bool, default false: add subtotals
+  - `:margins_name`: str, default \"All\": name of the row/column holding totals
+  when `:margins` true
+  - `:dropna` -> bool, default true: exclude columns with all missing values
+  - `:normalize` -> bool, {\"all\" \"index\" \"columns\"}, {0 1}, default false:
+  normalize by dividing all values by the sum of values
+
+  **Examples**
+
+  ```
+  (crosstab [[1 2 2]] {:columns [[:a :b :a]]})
+  ;; col_0  a  b
+  ;; row_0      
+  ;; 1      1  0
+  ;; 2      1  1
+
+  (crosstab [[1 2 2]] {:columns [[:a :b :a]]
+                       :rownames [:myrows]
+                       :colnames [:mycols]})
+  ;; mycols  a  b
+  ;; myrows      
+  ;; 1       1  0
+  ;; 2       1  1
+
+  (crosstab [[1 2 2]] {:columns [[:a :b :b]]
+                       :values [10 20 30]
+                       :aggfunc :mean})
+  ;; col_0     a     b
+  ;; row_0            
+  ;; 1      10.0   NaN
+  ;; 2       NaN  25.0
+
+  (crosstab [[1 2 2]] {:columns [[:a :b :a]]
+                       :margins true})
+  ;; col_0  a  b  All
+  ;; row_0           
+  ;; 1      1  0    1
+  ;; 2      1  1    2
+  ;; All    2  1    3
+  ```
+  "
+  [seq-or-srs & [attrs]]
+  (u/kw-call u/pd "crosstab" seq-or-srs attrs))
 
 (defn pivot
   [df & [attrs]]
