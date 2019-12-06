@@ -3,7 +3,7 @@
     [clojure.test :refer :all]
     [libpython-clj.python :as py]
     [panthera.pandas.generics :as g]
-    [panthera.pandas.utils :as u :reload true]
+    [panthera.pandas.utils :as u]
     [panthera.pandas.math :as m]))
 
 (deftest series

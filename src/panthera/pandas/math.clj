@@ -5,6 +5,13 @@
    [libpython-clj.python :as py]
    [panthera.pandas.utils :as u]))
 
+(defn same?
+  "This works differently than `eq`: the latter checks equality
+  value by value, `same?` checks that the given `series`es or `data-frame`s contain
+  the same exact values. This works even with missing values."
+  [left right]
+  (py/call-attr left :equals right))
+
 (defn- base-math
   [k]
   (fn [& args]

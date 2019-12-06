@@ -79,9 +79,11 @@
   (memo-columns-converter \"ALL_CAPS\") ; :all-caps
   ```"
   (m/fifo
-    #(if (number? %)
-       %
-       (csk/->kebab-case-keyword %)) {} :fifo/threshold 512))
+    #(cond
+       (number? %) %
+       (string? %) (csk/->kebab-case-keyword %)
+       (nil? %) nil
+       :else (mapv csk/->kebab-case-keyword %)) {} :fifo/threshold 512))
 
 (defn vec->pylist
   "Converts an iterable Clojure data structure to a Python list
@@ -187,7 +189,7 @@
   (if (series? df-or-srs)
     (let [nm (memo-columns-converter
                (or (py/get-attr df-or-srs "name")
-                   :unnamed))]
+                   "unnamed"))]
       (into [] (map #(assoc {} nm %))
             (vec df-or-srs)))
     (let [ks (map memo-columns-converter

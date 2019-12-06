@@ -47,6 +47,15 @@
     {:a-k 1} {"a_k" 1}
     {(keyword "with spaces") 1} {"with_spaces" 1}))
 
+(deftest memo-columns-converter
+  (are [i o]
+      (= (u/memo-columns-converter i) o)
+    1 1
+    nil nil
+    "a" :a
+    "col_1" :col-1
+    ["multi" "col"] [:multi :col]))
+
 (deftest ->clj
   (is (= (u/->clj
            (py/call-attr u/pd "DataFrame" [{:a 1 :b 2} {:a 3 :b 4}]))
