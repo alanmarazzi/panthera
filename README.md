@@ -65,7 +65,7 @@ PYTHONHOME="/home/user/miniconda3/envs/panthera" lein whatever
 - assign `PYTHONHOME` env variable before requiring **panthera**
 
 ```bash
-(System/setProperty "PYTONHOME" "/home/user/miniconda3/envs/panthera")
+(System/setProperty "PYTHONHOME" "/home/user/miniconda3/envs/panthera")
 ```
 
 ### The actual code
