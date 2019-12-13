@@ -5,7 +5,8 @@
    [panthera.pandas.utils :as u :reload true]
    [panthera.pandas.generics :as g]
    [panthera.pandas.reshape :as r :reload true]
-   [panthera.pandas.math :as m :reload true]))
+   [panthera.pandas.math :as m :reload true]
+   [panthera.pandas.conversion :as c]))
 
 (defn filter-nan
   [d]
@@ -115,3 +116,160 @@
           {:key "c", :lvalue 2.0, :group "a", :rvalue 2.0}
           {:key "d", :lvalue ##NaN, :group ##NaN, :rvalue 3.0}
           {:key "e", :lvalue 3.0, :group "a", :rvalue ##NaN}])))
+
+(deftest merge-asof
+  (let [trades (g/data-frame
+                 {:time     (c/->datetime ["2016-05-25 13:30:00.023"
+                                           "2016-05-25 13:30:00.038"
+                                           "2016-05-25 13:30:00.048"
+                                           "2016-05-25 13:30:00.048"])
+                  :ticker   [:MSFT :MSFT :GOOG :AAPL]
+                  :price    [51.95 51.95 720.77 98.00]
+                  :quantity [75 155 100 100]})
+        quotes (g/data-frame
+                 {:time   (c/->datetime ["2016-05-25 13:30:00.023"
+                                         "2016-05-25 13:30:00.023"
+                                         "2016-05-25 13:30:00.030"
+                                         "2016-05-25 13:30:00.048"
+                                         "2016-05-25 13:30:00.049"])
+                  :ticker [:GOOG :MSFT :MSFT :GOOG :AAPL]
+                  :bid    [720.5 51.95 51.97 720.5 97.99]
+                  :ask    [720.93 51.96 51.98 720.93 98.01]})]
+    (are [d o]
+        (m/same? (r/merge-asof trades quotes d) (g/data-frame o))
+      {:on       :time
+       :suffixes [:-x :-y]} [{:time     (c/->datetime "2016-05-25 13:30:00.023000"),
+                              :ticker-x "MSFT",
+                              :price    51.95,
+                              :quantity 75,
+                              :ticker-y "MSFT",
+                              :bid      51.95,
+                              :ask      51.96}
+                             {:time     (c/->datetime "2016-05-25 13:30:00.038000"),
+                              :ticker-x "MSFT",
+                              :price    51.95,
+                              :quantity 155,
+                              :ticker-y "MSFT",
+                              :bid      51.97,
+                              :ask      51.98}
+                             {:time     (c/->datetime "2016-05-25 13:30:00.048000"),
+                              :ticker-x "GOOG",
+                              :price    720.77,
+                              :quantity 100,
+                              :ticker-y "GOOG",
+                              :bid      720.5,
+                              :ask      720.93}
+                             {:time     (c/->datetime "2016-05-25 13:30:00.048000"),
+                              :ticker-x "AAPL",
+                              :price    98.0,
+                              :quantity 100,
+                              :ticker-y "GOOG",
+                              :bid      720.5,
+                              :ask      720.93}]
+
+      {:on                  :time
+       :allow-exact-matches false
+       :suffixes            [:-x :-y]} [{:time     (c/->datetime "2016-05-25 13:30:00.023000"),
+                                         :ticker-x "MSFT",
+                                         :price    51.95,
+                                         :quantity 75,
+                                         :ticker-y ##NaN,
+                                         :bid      ##NaN,
+                                         :ask      ##NaN}
+                                        {:time     (c/->datetime "2016-05-25 13:30:00.038000"),
+                                         :ticker-x "MSFT",
+                                         :price    51.95,
+                                         :quantity 155,
+                                         :ticker-y "MSFT",
+                                         :bid      51.97,
+                                         :ask      51.98}
+                                        {:time     (c/->datetime "2016-05-25 13:30:00.048000"),
+                                         :ticker-x "GOOG",
+                                         :price    720.77,
+                                         :quantity 100,
+                                         :ticker-y "MSFT",
+                                         :bid      51.97,
+                                         :ask      51.98}
+                                        {:time     (c/->datetime "2016-05-25 13:30:00.048000"),
+                                         :ticker-x "AAPL",
+                                         :price    98.0,
+                                         :quantity 100,
+                                         :ticker-y "MSFT",
+                                         :bid      51.97,
+                                         :ask      51.98}]
+
+      {:on        :time
+       :direction :forward
+       :suffixes  [:-x :-y]} [{:time     (c/->datetime "2016-05-25 13:30:00.023000"),
+                               :ticker-x "MSFT",
+                               :price    51.95,
+                               :quantity 75,
+                               :ticker-y "GOOG",
+                               :bid      720.5,
+                               :ask      720.93}
+                              {:time     (c/->datetime "2016-05-25 13:30:00.038000"),
+                               :ticker-x "MSFT",
+                               :price    51.95,
+                               :quantity 155,
+                               :ticker-y "GOOG",
+                               :bid      720.5,
+                               :ask      720.93}
+                              {:time     (c/->datetime "2016-05-25 13:30:00.048000"),
+                               :ticker-x "GOOG",
+                               :price    720.77,
+                               :quantity 100,
+                               :ticker-y "GOOG",
+                               :bid      720.5,
+                               :ask      720.93}
+                              {:time     (c/->datetime "2016-05-25 13:30:00.048000"),
+                               :ticker-x "AAPL",
+                               :price    98.0,
+                               :quantity 100,
+                               :ticker-y "GOOG",
+                               :bid      720.5,
+                               :ask      720.93}]
+      {:on       :time
+       :by       :ticker
+       :suffixes [:-x :-y]}  [{:time     (c/->datetime "2016-05-25 13:30:00.023000"),
+                               :ticker   "MSFT",
+                               :price    51.95,
+                               :quantity 75,
+                               :bid      51.95,
+                               :ask      51.96}
+                              {:time     (c/->datetime "2016-05-25 13:30:00.038000"),
+                               :ticker   "MSFT",
+                               :price    51.95,
+                               :quantity 155,
+                               :bid      51.97,
+                               :ask      51.98}
+                              {:time     (c/->datetime "2016-05-25 13:30:00.048000"),
+                               :ticker   "GOOG",
+                               :price    720.77,
+                               :quantity 100,
+                               :bid      720.5,
+                               :ask      720.93}
+                              {:time     (c/->datetime "2016-05-25 13:30:00.048000"),
+                               :ticker   "AAPL",
+                               :price    98.0,
+                               :quantity 100,
+                               :bid      ##NaN,
+                               :ask      ##NaN}])))
+
+(deftest concatenate
+  (are [d o]
+      (m/same?
+        (r/concatenate [(g/data-frame {:a [1 2 3]
+                                       :b [4 5 6]})
+                        (g/data-frame {:a [2 2 2]
+                                       :b [3 3 3]})] d)
+        (g/data-frame o))
+
+    {} [{:a 1, :b 4} {:a 2, :b 5} {:a 3, :b 6}
+        {:a 2, :b 3} {:a 2, :b 3} {:a 2, :b 3}]
+
+    {:axis 1} [{:a 2, :b 3} {:a 2, :b 3} {:a 2, :b 3}]
+
+    {:axis 1
+     :ignore-index true} [{0 1, 1 4, 2 2, 3 3}
+                          {0 2, 1 5, 2 2, 3 3}
+                          {0 3, 1 6, 2 2, 3 3}]))
