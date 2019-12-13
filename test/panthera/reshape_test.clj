@@ -256,20 +256,26 @@
                                :ask      ##NaN}])))
 
 (deftest concatenate
-  (are [d o]
+  (are [d o do]
       (m/same?
         (r/concatenate [(g/data-frame {:a [1 2 3]
                                        :b [4 5 6]})
                         (g/data-frame {:a [2 2 2]
                                        :b [3 3 3]})] d)
-        (g/data-frame o))
+        (g/data-frame o do))
 
     {} [{:a 1, :b 4} {:a 2, :b 5} {:a 3, :b 6}
-        {:a 2, :b 3} {:a 2, :b 3} {:a 2, :b 3}]
+        {:a 2, :b 3} {:a 2, :b 3} {:a 2, :b 3}] {:index [0 1 2 0 1 2]}
 
-    {:axis 1} [{:a 2, :b 3} {:a 2, :b 3} {:a 2, :b 3}]
+    {:axis 1} [[1 4 2 3] [2 5 2 3] [3 6 2 3]] {:columns [:a :b :a :b]}
 
     {:axis 1
      :ignore-index true} [{0 1, 1 4, 2 2, 3 3}
                           {0 2, 1 5, 2 2, 3 3}
-                          {0 3, 1 6, 2 2, 3 3}]))
+                          {0 3, 1 6, 2 2, 3 3}] {}))
+
+
+
+
+
+

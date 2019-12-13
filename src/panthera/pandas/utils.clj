@@ -8,7 +8,9 @@
 
 (py/initialize!)
 
-(defonce builtins (py/import-module "builtins"))
+(require-python '[builtins :as bt])
+
+;(defonce builtins (py/import-module "builtins"))
 (defonce pd (py/import-module "pandas"))
 
 (defn slice
@@ -33,14 +35,17 @@
 
   (slice 1 10 2) ; every 2 values between 1 and 10
   ```"
-  ([]
-   (py/call-attr builtins "slice" nil))
-  ([start]
-   (py/call-attr builtins "slice" start))
-  ([start stop]
-   (py/call-attr builtins "slice" start stop))
-  ([start stop incr]
-   (py/call-attr builtins "slice" start stop incr)))
+  [& args]
+  (apply bt/slice args)
+  (comment
+    ([]
+     (py/call-attr builtins "slice" nil))
+    ([start]
+     (py/call-attr builtins "slice" start))
+    ([start stop]
+     (py/call-attr builtins "slice" start stop))
+    ([start stop incr]
+     (py/call-attr builtins "slice" start stop incr))))
 
 (defn pytype
   "Return the Python type of the given objects
@@ -168,12 +173,27 @@
   [obj]
   (identical? :data-frame (pytype obj)))
 
+(defmulti to-clj
+  (fn [obj] (series? obj)))
+
+(defmethod to-clj false
+  [obj]
+  {:id   (py/get-attr obj "index")
+   :cols (py/get-attr obj "columns")
+   :data (lazy-seq (py/get-attr obj "values"))})
+
+(defmethod to-clj true
+  [obj]
+  {:id   (py/get-attr obj "index")
+   :cols (or (py/get-attr obj "name") "unnamed")
+   :data (lazy-seq (py/get-attr obj "values"))})
+
 (defn ->clj
   "Convert the given panthera data-frame or series to a Clojure vector of maps.
   The idea is to have a common, simple and fast access point to conversion of
   the main data structures between languages.
 
-  - series: a series gets converted to a vector of maps with only one key and
+  - `series`: a `series` gets converted to a vector of maps with only one key and
   one value. If the series has a name that becomes the key of the maps,
   otherwise `->clj` falls back to the `:unnamed` key.
   - data-frame: a data-frame is converted to a vector of maps with names
@@ -186,17 +206,19 @@
 
   (->clj my-df)
   ```"
-  [df-or-srs]
-  (if (series? df-or-srs)
-    (let [nm (memo-columns-converter
-               (or (py/get-attr df-or-srs "name")
+  [df-or-srs & [clj?]]
+  (if-not clj?
+    (to-clj df-or-srs)
+    (if (series? df-or-srs)
+      (let [nm (memo-columns-converter
+                 (or (py/get-attr df-or-srs "name")
                    "unnamed"))]
-      (into [] (map #(assoc {} nm %))
-            (vec df-or-srs)))
-    (let [ks (map memo-columns-converter
-                  (py/get-attr df-or-srs "columns"))]
-      (into [] (map #(zipmap ks %))
-            (py/get-attr df-or-srs "values")))))
+        (into [] (map #(assoc {} nm %))
+          (vec df-or-srs)))
+      (let [ks (map memo-columns-converter
+                 (py/get-attr df-or-srs "columns"))]
+        (into [] (map #(zipmap ks %))
+          (py/get-attr df-or-srs "values"))))))
 
 (defn simple-kw-call
   "Helper for a cleaner access to `call-attr-kw` from `libpython-clj`"

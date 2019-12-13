@@ -45,10 +45,7 @@
   (series [\"1.3\" \"3.0\"] {:dtype :float32})
   ```"
   [data & [attrs]]
-  (u/kw-call u/pd "Series" data attrs)
-  ;[& [attrs]]
-  ;((py/$. u/pd Series) attrs)
-  )
+  (u/kw-call u/pd "Series" data attrs))
 
 (defn data-frame
   "Creates a panthera data-frame, the underlying backend is a
