@@ -2,8 +2,8 @@
   (:require
     [clojure.test :refer :all]
     [libpython-clj.python :as py]
-    [panthera.pandas.generics :as g]
-    [panthera.pandas.utils :as u]
+    [panthera.pandas.generics :as g :reload true]
+    [panthera.pandas.utils :as u :reload true]
     [panthera.pandas.math :as m]))
 
 (deftest series
@@ -33,7 +33,7 @@
     (to-array-2d [[1 2] [3 4]]) {:columns [:a :b]}
     (to-array-2d [[1 2] [3 4]]) {:dtype :int8})
   (are [i m o]
-    (= (u/->clj (g/data-frame i m)) o)
+    (= (u/->clj (g/data-frame i m) true) o)
     [] {} []
     [] {:columns [:a :b]} []
     [{:a 1 :b 2} {:a 1 :b 2}] {} [{:a 1 :b 2} {:a 1 :b 2}]
@@ -53,7 +53,7 @@
 
 (deftest one-hot
   (are [i m o]
-       (= (u/->clj (g/one-hot (g/series i) m)) o)
+       (= (u/->clj (g/one-hot (g/series i) m) true) o)
     [] {} []
     ["a" "b"] {} [{:a 1
                    :b 0}
@@ -65,7 +65,7 @@
                                 :pre-b 1}])
   (are [i m o]
        (= (u/->clj (g/one-hot (g/data-frame i)
-                              {:columns m})) o)
+                              {:columns m}) true) o)
 
     [{:a 1 :b "c"} {:a 2 :b "d"}]
     [:b]
@@ -131,10 +131,10 @@
        (= (u/->clj (apply g/subset-rows
                           (g/data-frame (->> (range 1 11)
                                              (partition 2)
-                                             to-array-2d)) s)) o)
+                                             to-array-2d)) s) true) o)
     [] (u/->clj (g/data-frame (->> (range 1 11)
                                    (partition 2)
-                                   to-array-2d)))
+                                   to-array-2d)) true)
     [1] [{0 1 1 2}]
     [1 3] [{0 3 1 4} {0 5 1 6}]
     [1 3 2] [{0 3 1 4}]))
@@ -156,7 +156,7 @@
             (g/data-frame
              (flatten
               (repeat 5 [{:a 1 :b 2}
-                         {:a 2 :b 3}]))) n))
+                         {:a 2 :b 3}]))) n) true)
           o)
     nil (drop-last (flatten
                     (repeat 3 [{:a 1 :b 2}

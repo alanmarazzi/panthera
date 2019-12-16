@@ -35,17 +35,14 @@
 
   (slice 1 10 2) ; every 2 values between 1 and 10
   ```"
-  [& args]
-  (apply bt/slice args)
-  (comment
-    ([]
-     (py/call-attr builtins "slice" nil))
-    ([start]
-     (py/call-attr builtins "slice" start))
-    ([start stop]
-     (py/call-attr builtins "slice" start stop))
-    ([start stop incr]
-     (py/call-attr builtins "slice" start stop incr))))
+  ([]
+   (bt/slice nil))
+  ([start]
+   (bt/slice start))
+  ([start stop]
+   (bt/slice start stop))
+  ([start stop incr]
+   (bt/slice start stop incr)))
 
 (defn pytype
   "Return the Python type of the given objects
