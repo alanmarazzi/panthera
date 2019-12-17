@@ -175,15 +175,24 @@
 
 (defmethod to-clj false
   [obj]
-  {:id   (py/get-attr obj "index")
-   :cols (py/get-attr obj "columns")
-   :data (lazy-seq (py/get-attr obj "values"))})
+  {:id (py/get-attr obj "index")
+   :columns (py/get-attr obj "columns")
+   :data (lazy-seq (py/get-attr obj "values"))}
+  (comment (->DATASET
+             (py/get-attr obj "index")
+             (py/get-attr obj "columns")
+             (lazy-seq (py/get-attr obj "values")))))
 
 (defmethod to-clj true
   [obj]
-  {:id   (py/get-attr obj "index")
-   :cols (or (py/get-attr obj "name") "unnamed")
-   :data (lazy-seq (py/get-attr obj "values"))})
+  {:id      (py/get-attr obj "index")
+   :columns (or (py/get-attr obj "name") "unnamed")
+   :data    (lazy-seq (py/get-attr obj "values"))}
+  (comment
+    (->DATASET
+      (py/get-attr obj "index")
+      (or (py/get-attr obj "name") "unnamed")
+      (lazy-seq (py/get-attr obj "values")))))
 
 (defn ->clj
   "Convert the given panthera data-frame or series to a Clojure vector of maps.
@@ -193,18 +202,29 @@
   - `series`: a `series` gets converted to a vector of maps with only one key and
   one value. If the series has a name that becomes the key of the maps,
   otherwise `->clj` falls back to the `:unnamed` key.
-  - data-frame: a data-frame is converted to a vector of maps with names
+  - `data-frame`: a `data-frame` is converted to a vector of maps with names
   of the columns as keys and values as the corresponding row/column value.
 
-  Examples:
+  With the default method you might incur a data loss: the index doesn't get
+  converted and in case you're using a hierarchical index you get only one level
+  out of it. To keep everything in one place you have to make `full?` true, in
+  this way you get back a map with keys `{:id :cols :data}`.
+
+  **Arguments**
+
+  - `df-or-srs` -> `data-frame` or `series`
+  - `full?` -> whether to use the full conversion
+
+  **Examples**
 
   ```
   (->clj my-srs)
 
   (->clj my-df)
-  ```"
-  [df-or-srs & [clj?]]
-  (if-not clj?
+  ```
+  "
+  [df-or-srs & [full?]]
+  (if full?
     (to-clj df-or-srs)
     (if (series? df-or-srs)
       (let [nm (memo-columns-converter
