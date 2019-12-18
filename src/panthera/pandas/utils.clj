@@ -170,29 +170,56 @@
   [obj]
   (identical? :data-frame (pytype obj)))
 
+(defrecord DATASET [id cols data shape])
+
+(defn pr-lazy-dataset
+  [data]
+  (let [cnt (first (:shape data))]
+    (if (> cnt 4)
+      (conj (vec (take 5 (:data data))) '...)
+      (vec (:data data)))))
+
+(defmethod print-method DATASET [v ^java.io.Writer w]
+  (let [id    (:id v)
+        cols  (:cols v)
+        shape (:shape v)
+        data  (pr-lazy-dataset v)]
+    (clojure.pprint/pprint {:id id :cols cols :data data})))
+
+(defmethod print-dup DATASET [v ^java.io.Writer w]
+  (let [id    (:id v)
+        cols  (:cols v)
+        shape (:shape v)
+        data  (pr-lazy-dataset v)]
+    (clojure.pprint/pprint {:shape (vec shape) :id id :cols cols :data data})))
+
+(defmethod clojure.pprint/simple-dispatch DATASET [v]
+  (let [id    (:id v)
+        cols  (:cols v)
+        shape (:shape v)
+        data  (pr-lazy-dataset v)]
+    (clojure.pprint/pprint {:shape (vec shape) :id id :cols cols :data data})))
+
 (defmulti to-clj
-  (fn [obj] (series? obj)))
+  (fn [obj] (identical? :series (py/python-type obj))))
 
 (defmethod to-clj false
   [obj]
-  {:id (py/get-attr obj "index")
-   :columns (py/get-attr obj "columns")
-   :data (lazy-seq (py/get-attr obj "values"))}
-  (comment (->DATASET
-             (py/get-attr obj "index")
-             (py/get-attr obj "columns")
-             (lazy-seq (py/get-attr obj "values")))))
+  (let [cnt (py/get-attr obj "shape")]
+    (->DATASET
+      (py/get-attr obj "index")
+      (py/get-attr obj "columns")
+      (lazy-seq (py/get-attr obj "values"))
+      cnt)))
 
 (defmethod to-clj true
   [obj]
-  {:id      (py/get-attr obj "index")
-   :columns (or (py/get-attr obj "name") "unnamed")
-   :data    (lazy-seq (py/get-attr obj "values"))}
-  (comment
+  (let [cnt (py/get-attr obj "shape")]
     (->DATASET
       (py/get-attr obj "index")
       (or (py/get-attr obj "name") "unnamed")
-      (lazy-seq (py/get-attr obj "values")))))
+      (lazy-seq (py/get-attr obj "values"))
+      cnt)))
 
 (defn ->clj
   "Convert the given panthera data-frame or series to a Clojure vector of maps.

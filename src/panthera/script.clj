@@ -3,23 +3,28 @@
    [panthera.pandas.generics :as g]
    [libpython-clj.python :as py]))
 
-(defrecord Data [data])
-
-(defmethod print-method Data [v ^java.io.Writer w]
-  (pr (vec (take 5 (:data v)))))
-
 (defrecord DATASET [id cols data])
+
+(defn pr-lazy-dataset
+  [data]
+  (conj (vec (take 5 (:data data))) '...))
 
 (defmethod print-method DATASET [v ^java.io.Writer w]
   (let [id (:id v)
         cols (:cols v)
-        data (conj (vec (take 5 (:data v))) \u2026)]
+        data (pr-lazy-dataset v)]
     (clojure.pprint/pprint {:id id :cols cols :data data})))
 
 (defmethod print-dup DATASET [v ^java.io.Writer w]
   (let [id   (:id v)
         cols (:cols v)
-        data (conj (vec (take 5 (:data v))) "...")]
+        data (pr-lazy-dataset v)]
+    (clojure.pprint/pprint {:id id :cols cols :data data})))
+
+(defmethod clojure.pprint/simple-dispatch DATASET [v]
+  (let [id   (:id v)
+        cols (:cols v)
+        data (pr-lazy-dataset v)]
     (clojure.pprint/pprint {:id id :cols cols :data data})))
 
 (defmulti to-clj

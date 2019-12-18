@@ -2,9 +2,7 @@
   (:require
    [libpython-clj.python :as py]
    [panthera.pandas.utils :as u]
-   [panthera.pandas.generics :as g]
-
-   [libpython-clj.python.protocols :as p]))
+   [panthera.pandas.generics :as g]))
 
 (defn crosstab
   "Compute a cross tabulation of two (or more) factors. By default
@@ -461,19 +459,95 @@
                    :as attrs}]]
   (u/kw-call u/pd "concat" dfs-or-srss attrs))
 
-(defn factorize
-  [seq-or-srs & [attrs]]
-  (u/kw-call u/pd "factorize" seq-or-srs attrs))
-
 (defn aggregate
-  [df-or-srs how & [attrs]]
+  "Aggregate data using one or more functions over a given axis.
+
+  This is very similar to `reduce`, but works on `data-frames` as well.
+
+  **Arguments**
+
+  - `df-or-srs` -> `data-frame`, `series`
+  - `how` -> keyword, str, function, Iterable: how to aggregate data. This accepts
+  either panthera functions strings/keywords, a list of the previous and/or user
+  defined functions. Check examples for more info.
+
+  **Attrs**
+
+  - `:axis` -> {0 `:index` 1 `:columns`}, default 0: 0 = apply function along
+  cols; 1 = apply function along rows
+
+  **Examples**
+
+  ```
+  (def a (data-frame
+         [[1, 2, 3]
+          [4, 5, 6]
+          [7, 8, 9]
+          [##NaN, ##NaN, ##NaN]]
+         {:columns [:A :B :C]}))
+
+  (aggregate (series [1 2 3]) :sum)
+  ;; 6
+
+  (aggregate a [:sum :min])
+  ;;         A     B     C
+  ;; sum  12.0  15.0  18.0
+  ;; min   1.0   2.0   3.0
+
+  ; if `how` needs arguments, you can pass them as `attrs`
+  (aggregate (series [1 2 3]) :cov {:other (series [4 5 6])})
+  ;; 1.0
+
+  (aggregate (series [1 2 3]) inc)
+  ;; 0    2
+  ;; 1    3
+  ;; 2    4
+  ;; dtype: int64
+  ```
+  "
+  [df-or-srs how & [{:keys [axis fn-args]} :as attrs]]
   (u/kw-call df-or-srs "agg" how attrs))
 
 (defn remap
-  [df-or-srs mappings & [na-action]]
-  (py/call-attr df-or-srs "map" mappings (or na-action nil)))
+  "Remap values in a series.
+
+  This is the same as using `map` on a sequence while using a map as the mapped
+  function: `(map {:a 1 :b 2} [:a :b]) => (1 2)`
+
+  **Arguments**
+
+  - `srs` -> `series`
+  - `mappings` -> map, function: the mapping correspondence
+  - `na-action` -> {`nil` `:ignore`}, default `nil`: `:ignore` doesn't pass missing
+  values to the `mappings`
+
+  **Examples**
+
+  ```
+  (remap (series [:a :b :c]) {:a 1 :b 2 :c 3})
+  ;; 0    1
+  ;; 1    2
+  ;; 2    3
+  ;; dtype: int64
+
+  (remap (series [:a :b ##NaN]) #(str \"This is \" %))
+  ;; 0      This is a
+  ;; 1      This is b
+  ;; 2    This is NaN
+  ;; dtype: object
+
+  (remap (series [:a :b ##NaN]) #(str \"This is \" %) :ignore)
+  ;; 0      This is a
+  ;; 1      This is b
+  ;; 2            NaN
+  ;; dtype: object
+  ```
+  "
+  [srs mappings & [na-action]]
+  (py/call-attr srs "map" mappings (or na-action nil)))
 
 (defn groupby
+  ""
   [df-or-srs by & [attrs]]
   (u/kw-call df-or-srs "groupby" by attrs))
 

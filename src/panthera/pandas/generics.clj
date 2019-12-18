@@ -814,8 +814,8 @@
              "value_counts"
              (dissoc attrs :clj))]
       (if (:clj attrs)
-        (zipmap 
-         (map u/memo-columns-converter (vec (index v))) 
+        (zipmap
+         (map u/memo-columns-converter (vec (index v)))
          (vec v))
         v))
     (recur (series seq-or-srs) [attrs])))
@@ -1195,3 +1195,8 @@
   ```"
   [df-or-srs i j]
   (u/simple-kw-call df-or-srs "swaplevel" [] {"i" i "j" j}))
+
+(defn factorize
+  "TODO"
+  [seq-or-srs & [attrs]]
+  (u/kw-call u/pd "factorize" seq-or-srs attrs))

@@ -33,7 +33,7 @@
     (to-array-2d [[1 2] [3 4]]) {:columns [:a :b]}
     (to-array-2d [[1 2] [3 4]]) {:dtype :int8})
   (are [i m o]
-    (= (u/->clj (g/data-frame i m) true) o)
+    (= (u/->clj (g/data-frame i m)) o)
     [] {} []
     [] {:columns [:a :b]} []
     [{:a 1 :b 2} {:a 1 :b 2}] {} [{:a 1 :b 2} {:a 1 :b 2}]
@@ -53,7 +53,7 @@
 
 (deftest one-hot
   (are [i m o]
-       (= (u/->clj (g/one-hot (g/series i) m) true) o)
+       (= (u/->clj (g/one-hot (g/series i) m)) o)
     [] {} []
     ["a" "b"] {} [{:a 1
                    :b 0}
@@ -65,7 +65,7 @@
                                 :pre-b 1}])
   (are [i m o]
        (= (u/->clj (g/one-hot (g/data-frame i)
-                              {:columns m}) true) o)
+                              {:columns m})) o)
 
     [{:a 1 :b "c"} {:a 2 :b "d"}]
     [:b]
@@ -131,10 +131,10 @@
        (= (u/->clj (apply g/subset-rows
                           (g/data-frame (->> (range 1 11)
                                              (partition 2)
-                                             to-array-2d)) s) true) o)
+                                             to-array-2d)) s)) o)
     [] (u/->clj (g/data-frame (->> (range 1 11)
                                    (partition 2)
-                                   to-array-2d)) true)
+                                   to-array-2d)))
     [1] [{0 1 1 2}]
     [1 3] [{0 3 1 4} {0 5 1 6}]
     [1 3 2] [{0 3 1 4}]))
@@ -156,7 +156,7 @@
             (g/data-frame
              (flatten
               (repeat 5 [{:a 1 :b 2}
-                         {:a 2 :b 3}]))) n) true)
+                         {:a 2 :b 3}]))) n))
           o)
     nil (drop-last (flatten
                     (repeat 3 [{:a 1 :b 2}
@@ -176,7 +176,7 @@
           o)
     [{:a 1}] [:a] [{:a 1}]
     [{:a 1 :b 2 :c 3}] [:a :c] [{:a 1 :c 3}]
-    (repeat 5 {:a 1 :b 2}) [:b] (repeat 5 {:b 2})
+    (vec (repeat 5 {:a 1 :b 2})) [:b] (vec (repeat 5 {:b 2}))
     [{:wEiR__.D 1 :b 2}] [:wEiR__.D] [{:w-ei-r-.-d 1}]))
 
 (deftest n-largest
@@ -244,9 +244,7 @@
     [1 1 2] {} {1 2 2 1}
     [:a :a :b :c] {} {:a 2 :b 1 :c 1}
     (repeat 50 :a) {} {:a 50}
-    [:a :a :b :c] {:normalize true} {:a 0.5 :b 0.25 :c 0.25}
-    ;(range 20) {:bins 4} {:a 0.5 :b 0.25 :c 0.25} Intervals are not handled
-    ))
+    [:a :a :b :c] {:normalize true} {:a 0.5 :b 0.25 :c 0.25}))
 
 (deftest reset-index
   (are [i m o]
@@ -309,8 +307,8 @@
                                {:unnamed 18}
                                {:unnamed 19}]
     (g/series (range 20)) 2 [{:unnamed 18} {:unnamed 19}]
-    (g/data-frame (repeat 10 {:a 1 :b 2})) nil (repeat 5 {:a 1 :b 2})
-    (g/data-frame (repeat 10 {:a 1 :b 2})) 2 (repeat 2 {:a 1 :b 2})))
+    (g/data-frame (vec (repeat 10 {:a 1 :b 2}))) nil (repeat 5 {:a 1 :b 2})
+    (g/data-frame (vec (repeat 10 {:a 1 :b 2}))) 2 (repeat 2 {:a 1 :b 2})))
 
 (deftest fill-na
   (are [v m o]

@@ -274,8 +274,30 @@
                           {0 2, 1 5, 2 2, 3 3}
                           {0 3, 1 6, 2 2, 3 3}] {}))
 
+(deftest aggregate
+  (are [v d o]
+      (= (m/same?
+           (r/aggregate (g/data-frame [[1, 2, 3],
+                                       [4, 5, 6],
+                                       [7, 8, 9],
+                                       [##NaN, ##NaN, ##NaN]]
+                          {:columns [:A :B :C]}) v d)
+           o))
 
+    :sum {} (g/series [12 15 18] {:index [:A :B :C]})
 
+    [:sum :min] {} (g/data-frame
+                     {:A [12 1] :B [15 2] :C [18 3]}
+                     {:index [:sum :min]})
 
+    :sum {:axis 1} (g/series [6 15 24 0])))
 
-
+(deftest remap
+  (are [in mpgs ign o]
+      (= (m/same?
+           (r/remap
+             (g/series in)
+             mpgs ign)
+           o))
+    [:a :b :c] {:a 1 :b 2 :c 3} nil (g/series [1 2 3])
+    ))

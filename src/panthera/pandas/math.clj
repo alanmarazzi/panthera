@@ -139,8 +139,7 @@
                         :min   "cummin"
                         :prod  "cumprod"
                         :sum   "cumsum"
-                        :diff  "diff"
-                        :cmpnd "compound"} k)
+                        :diff  "diff"} k)
                       attrs)))
 
 (def cummax
@@ -157,9 +156,6 @@
 
 (def diff
   (base-cumulative :diff))
-
-(def compound
-  (base-cumulative :cmpnd))
 
 (defn describe
   [df-or-srs & [attrs]]
