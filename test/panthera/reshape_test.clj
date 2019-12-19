@@ -276,13 +276,13 @@
 
 (deftest aggregate
   (are [v d o]
-      (= (m/same?
-           (r/aggregate (g/data-frame [[1, 2, 3],
-                                       [4, 5, 6],
-                                       [7, 8, 9],
-                                       [##NaN, ##NaN, ##NaN]]
-                          {:columns [:A :B :C]}) v d)
-           o))
+      (m/same?
+        (r/aggregate (g/data-frame [[1, 2, 3],
+                                    [4, 5, 6],
+                                    [7, 8, 9],
+                                    [##NaN, ##NaN, ##NaN]]
+                       {:columns [:A :B :C]}) v d)
+        o)
 
     :sum {} (g/series [12 15 18] {:index [:A :B :C]})
 
@@ -294,10 +294,83 @@
 
 (deftest remap
   (are [in mpgs ign o]
-      (= (m/same?
-           (r/remap
-             (g/series in)
-             mpgs ign)
-           o))
-    [:a :b :c] {:a 1 :b 2 :c 3} nil (g/series [1 2 3])
-    ))
+      (m/same?
+        (r/remap
+          (g/series in)
+          mpgs ign)
+        o)
+    [:a :b :c]    {:a 1 :b 2 :c 3} nil     (g/series [1 2 3])
+    [:a :b ##NaN] #(str "Test " %) :ignore (g/series ["Test a" "Test b" ##NaN])))
+
+(deftest groupby
+  (are [d f o]
+      (m/same?
+        (-> (g/data-frame {:animal    [:falcon :falcon :parrot :parrot]
+                         :max-speed [380 370 24 26]})
+          (r/groupby :animal d)
+          f)
+        o)
+
+    {} m/mean (g/data-frame {:max-speed [375 25]}
+                {:index (g/series [:falcon :parrot] {:name :animal})})
+
+    {:as-index false} m/mean (g/data-frame [{:animal "falcon" :max-speed 375}
+                                            {:animal "parrot" :max-speed 25}])
+
+    {} m/std (g/data-frame [{:max-speed 7.0710678118654755}
+                            {:max-speed 1.4142135623730951}]
+               {:index (g/series [:falcon :parrot] {:name :animal})})))
+
+(deftest rolling
+  (are [w d o]
+      (m/same?
+        (-> (g/data-frame {:b [0 1 2 3 4]}
+              {:index
+               (panthera.pandas.conversion/->datetime
+                 (g/series
+                   ["20130101 09:00:00"
+                    "20130101 09:00:02"
+                    "20130101 09:00:03"
+                    "20130101 09:00:05"
+                    "20130101 09:00:06"]))})
+          (r/rolling w d)
+          m/sum)
+        (g/data-frame o
+          {:index
+           (panthera.pandas.conversion/->datetime
+             (g/series
+               ["20130101 09:00:00"
+                "20130101 09:00:02"
+                "20130101 09:00:03"
+                "20130101 09:00:05"
+                "20130101 09:00:06"]))}))
+    2 {} [{:b ##NaN} {:b 1.0} {:b 3.0} {:b 5.0} {:b 7.0}]
+    :2s {} [{:b 0.0} {:b 1.0} {:b 3.0} {:b 3.0} {:b 7.0}]
+    2 {:win-type :triang} [{:b ##NaN} {:b 0.5} {:b 1.5} {:b 2.5} {:b 3.5}]
+    2 {:min-periods 1} [{:b 0.0} {:b 1.0} {:b 3.0} {:b 5.0} {:b 7.0}]))
+
+(deftest ewm
+  (are [d o]
+      (m/same?
+        (-> (g/data-frame {:b [0 1 2 ##NaN 4]})
+          (r/ewm d)
+          m/mean)
+        (g/data-frame o))
+
+    {:com 0.5} [{:b 0.0}
+                {:b 0.7499999999999999}
+                {:b 1.6153846153846152}
+                {:b 1.6153846153846152}
+                {:b 3.670212765957447}]
+
+    {:span 2} [{:b 0.0}
+               {:b 0.7499999999999999}
+               {:b 1.6153846153846152}
+               {:b 1.6153846153846152}
+               {:b 3.670212765957447}]
+
+    {:com 0.5 :ignore-na true} [{:b 0.0}
+                                {:b 0.7499999999999999}
+                                {:b 1.6153846153846152}
+                                {:b 1.6153846153846152}
+                                {:b 3.2249999999999996}]))

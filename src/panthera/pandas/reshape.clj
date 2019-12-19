@@ -547,16 +547,178 @@
   (py/call-attr srs "map" mappings (or na-action nil)))
 
 (defn groupby
-  ""
-  [df-or-srs by & [attrs]]
+  "Group `data-frame` or `series` by a given variable.
+
+  Note that `groupby` does nothing by itself, this must be followed by another
+  operation like aggregation.
+
+  **Arguments**
+
+  - `df-or-srs` -> `data-frame`, `series`
+  - `by` -> str, keyword, Iterable, map, function: it can be a column, a list of
+  columns, a function used to group the index, a collection of values to use as
+  grouping variable
+
+  **Attrs**
+
+  - `:axis` -> {0 `:index` 1 `:columns`}: split along columns or rows
+  - `:level` -> int, str, keyword, Iterable: if multiple index, group by this
+  or these
+  - `:as-index` -> bool, default `true`: when `false` this becomes basically
+  as the SQL group by output
+  - `:sort` -> bool, default `true`: if `false` you get a performance improvement
+  - `:group-keys` -> bool, default `true`: add group keys to index when afterwards
+  you call `apply`
+  - `:squeeze` -> bool, default `false`: reduce dimensionality of the output if possible
+  - `:observed` -> bool, default `false`: this only applies to Categoricals:
+  if `true`, only show observed values for categorical groupers,
+  if `false`, show all values for categorical groupers
+
+  **Examples**
+
+  ```
+  (def a (data-frame {:animal [:falcon :falcon :parrot :parrot]
+                        :max-speed [380 370 24 26]}))
+
+  (-> a (r/groupby :animal) m/mean)
+        max-speed
+  ;; animal           
+  ;; falcon        375
+  ;; parrot         25
+
+  (-> a (r/groupby :animal {:as-index false}) m/mean)
+  ;;    animal  max-speed
+  ;; 0  falcon        375
+  ;; 1  parrot         25
+  ```
+  "
+  [df-or-srs by & [{:keys [axis level as-index sort group-keys
+                           squeeze observed] :as attrs}]]
   (u/kw-call df-or-srs "groupby" by attrs))
 
 (defn rolling
-  [df-or-srs window & [attrs]]
+  "Rolling window calculations
+
+  **Arguments**
+
+  - `df-or-srs` -> `data-frame`, `series`
+  - `window` -> int, str. keyword: the size of the window. If str or keyword then
+  this is considered as a time offset (e.g. :2s = 2 seconds, :30D = 30 days;
+  check this for more options https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
+
+  **Attrs**
+
+  - `:min-periods` -> int: minimum number of observations to have a value. For
+  times the default is 1, otherwise the default is `window`
+  - `:center` -> bool, default `false`: if `false` the result is set at the right
+  edge of the window, otherwise it gets centered
+  - `:win-type` -> str, keyword: refer to https://docs.scipy.org/doc/scipy/reference/signal.windows.html#module-scipy.signal.windows
+  - `:on`-> str, keyword: column to use for the rolling window, only in case this
+  is not the index
+  - `:axis` -> {0 `:index` 1 `:columns`}: split along columns or rows
+  - `:closed` -> {`:right` `:left` `:both` `:neither`}: where to make the interval
+  close
+
+  **Examples**
+  ```
+  (def a (data-frame {:b [0 1 2 3 4]}
+           {:index
+            (panthera.pandas.conversion/->datetime
+              (series
+                 [\"20130101 09:00:00\"
+                  \"20130101 09:00:02\"
+                  \"20130101 09:00:03\"
+                  \"20130101 09:00:05\"
+                  \"20130101 09:00:06\"]))}))
+
+  (sum (rolling a 2))
+  ;;                      b
+  ;; 2013-01-01 09:00:00  NaN
+  ;; 2013-01-01 09:00:02  1.0
+  ;; 2013-01-01 09:00:03  3.0
+  ;; 2013-01-01 09:00:05  5.0
+  ;; 2013-01-01 09:00:06  7.0
+
+  (sum (rolling a :2s))
+  ;;                      b
+  ;; 2013-01-01 09:00:00  0.0
+  ;; 2013-01-01 09:00:02  1.0
+  ;; 2013-01-01 09:00:03  3.0
+  ;; 2013-01-01 09:00:05  3.0
+  ;; 2013-01-01 09:00:06  7.0
+
+  (sum (rolling a 2 {:win-type :triang}))
+  ;;                      b
+  ;; 2013-01-01 09:00:00  NaN
+  ;; 2013-01-01 09:00:02  0.5
+  ;; 2013-01-01 09:00:03  1.5
+  ;; 2013-01-01 09:00:05  2.5
+  ;; 2013-01-01 09:00:06  3.5
+
+  (sum (rolling a 2 {:min-periods 1}))
+  ;;                      b
+  ;; 2013-01-01 09:00:00  0.0
+  ;; 2013-01-01 09:00:02  1.0
+  ;; 2013-01-01 09:00:03  3.0
+  ;; 2013-01-01 09:00:05  5.0
+  ;; 2013-01-01 09:00:06  7.0
+  ```
+  "
+  [df-or-srs window & [{:keys [min-periods center win-type on axis closed]
+                        :as attrs}]]
   (u/kw-call df-or-srs "rolling" window attrs))
 
 (defn ewm
-  [df-or-srs & [attrs]]
+  "Exponentially weighted functions.
+
+  **Arguments**
+
+  - `df-or-srs` -> `data-frame`, `series`
+
+  **Attrs**
+
+  - `:com` -> numeric: decay in terms of center of mass
+  - `:span` -> numeric: decay in terms of span
+  - `:halflife` -> numeric: decay in terms of half-life
+  - `:alpha` -> numeric: smoothing factor
+  - `:min-periods` -> int, default 0: minimum number of observations
+  - `:adjust` -> bool, default `true`: divide by decaying adjustment factor
+  in beginning periods to account for imbalance in relative weightings
+  - `:ignore-na` -> bool, default `false`: ignore missing values
+  - `:axis` -> {0 `:index` 1 `:columns`}: use columns or rows
+
+  **Examples**
+
+  ```
+  (def a (g/data-frame {:b [0 1 2 ##NaN 4]}))
+
+  (-> a (ewm {:com 0.5}) mean)
+  ;;           b
+  ;; 0  0.000000
+  ;; 1  0.750000
+  ;; 2  1.615385
+  ;; 3  1.615385
+  ;; 4  3.670213
+
+  (-> a (ewm {:span 3}) mean)
+  ;;           b
+  ;; 0  0.000000
+  ;; 1  0.666667
+  ;; 2  1.428571
+  ;; 3  1.428571
+  ;; 4  3.217391
+
+  (-> a (ewm {:com 0.5 :ignore-na true}) mean)
+  ;;           b
+  ;; 0  0.000000
+  ;; 1  0.750000
+  ;; 2  1.615385
+  ;; 3  1.615385
+  ;; 4  3.225000
+  ```
+  "
+  [df-or-srs & [{:keys [com span halflife min-periods adjust ignore-na axis]
+                 :as attrs}]]
   (u/simple-kw-call df-or-srs "ewm" attrs))
 
 ; remove :inplace as an attr
