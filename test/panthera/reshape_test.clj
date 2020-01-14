@@ -374,3 +374,29 @@
                                 {:b 1.6153846153846152}
                                 {:b 1.6153846153846152}
                                 {:b 3.2249999999999996}]))
+
+(deftest dropna
+  (are [s o d]
+      (m/same?
+        (-> (g/series s)
+          r/dropna)
+        (g/series o d))
+    []        []        {}
+    [1 nil 2] [1.0 2.0] {:index [0 2]})
+
+  (are [att out opt]
+      (m/same?
+        (-> (g/data-frame {:name ["Alfred" "Batman" "Robin"]
+                           :toy  [nil "Batmobile" "Whip"]
+                           :born [nil "1940-04-25" nil]})
+          (r/dropna att))
+        (g/data-frame out opt))
+    {} [{:name "Batman", :toy "Batmobile", :born "1940-04-25"}] {:index [1]}
+    {:axis 1} [{:name "Alfred"} {:name "Batman"} {:name "Robin"}] {}
+    {:how :all} [{:name "Alfred", :toy nil, :born nil}
+                 {:name "Batman", :toy "Batmobile", :born "1940-04-25"}
+                 {:name "Robin", :toy "Whip", :born nil}] {}
+    {:thresh 2} [{:name "Batman", :toy "Batmobile", :born "1940-04-25"}
+                 {:name "Robin", :toy "Whip", :born nil}] {:index [1 2]}
+    {:subset [:toy]} [{:name "Batman", :toy "Batmobile", :born "1940-04-25"}
+                      {:name "Robin", :toy "Whip", :born nil}] {:index [1 2]}))

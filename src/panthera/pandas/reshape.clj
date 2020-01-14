@@ -718,12 +718,13 @@
   ```
   "
   [df-or-srs & [{:keys [com span halflife min-periods adjust ignore-na axis]
-                 :as attrs}]]
+                 :as   attrs}]]
   (u/simple-kw-call df-or-srs "ewm" attrs))
 
-; remove :inplace as an attr
 (defn dropna
-  [df-or-srs & [attrs]]
+  "Drop missing values"
+  [df-or-srs & [{:keys [axis how thresh subset]
+                 :as   attrs}]]
   (u/simple-kw-call df-or-srs "dropna" attrs))
 
 (defn melt
