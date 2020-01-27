@@ -862,7 +862,7 @@
   (to-csv \"mycsv.csv\" {:sep \";\" :index false})
   ```"
   [df-or-srs filename & [attrs]]
-  (u/simple-kw-call df-or-srs "to_csv" attrs))
+  (u/kw-call df-or-srs "to_csv" filename attrs))
 
 (defn reset-index
   "Reset the index or part of it. This replaces the current index
@@ -1200,3 +1200,11 @@
   "TODO"
   [seq-or-srs & [attrs]]
   (u/kw-call u/pd "factorize" seq-or-srs attrs))
+
+(defn rename
+  [df-or-srs & [attrs]]
+  (u/simple-kw-call df-or-srs "rename" attrs))
+
+(defn to-excel
+  [df-or-srs filename & [attrs]]
+  (u/kw-call df-or-srs "to_excel" filename attrs))

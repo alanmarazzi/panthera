@@ -1,4 +1,6 @@
 (ns panthera.pandas.reshape
+  (:refer-clojure
+   :exclude [drop])
   (:require
    [libpython-clj.python :as py]
    [panthera.pandas.utils :as u]
@@ -475,6 +477,8 @@
 
   - `:axis` -> {0 `:index` 1 `:columns`}, default 0: 0 = apply function along
   cols; 1 = apply function along rows
+  - `fn-args` -> if the provided collapsing function needs arguments, just list
+  them freely (see examples)
 
   **Examples**
 
@@ -505,7 +509,7 @@
   ;; dtype: int64
   ```
   "
-  [df-or-srs how & [{:keys [axis fn-args]} :as attrs]]
+  [df-or-srs how & [{:keys [axis fn-args] :as attrs}]]
   (u/kw-call df-or-srs "agg" how attrs))
 
 (defn remap
@@ -721,26 +725,286 @@
                  :as   attrs}]]
   (u/simple-kw-call df-or-srs "ewm" attrs))
 
+(defn drop
+  "Drop requested rows or columns.
+
+  Remove rows or columns by specifying label names and corresponding axis,
+  or by specifying directly index or column names. When using a multi-index,
+  labels on different levels can be removed by specifying the level.
+
+  **Arguments**
+
+  - `df-or-srs` -> `data-frame`, `series`
+  - `labels` -> keyword, str, numeric, Iterable: index or labels to drop
+
+  **Attrs**
+
+  - `:axis` -> int, default 0: 0 = rows, 1 = columns
+  - `:level` -> numeric, keyword, str: level to drop from multi index
+  - `:errors` -> {`:ignore` `:raise`}, default `:raise`: ignore or raise errors
+
+  **Examples**
+
+  ```
+  (require-python '[numpy :as np])
+  (def df
+    (data-frame
+      (np/reshape (np/arange 12) [3 4])
+      {:columns [:A :B :C :D]}))
+
+  (drop df [:B :C] {:axis 1})
+  ;;    A   D
+  ;; 0  0   3
+  ;; 1  4   7
+  ;; 2  8  11
+
+  (drop df [0 1])
+  ;;    A  B   C   D
+  ;; 2  8  9  10  11
+  ```
+  "
+  [df-or-srs labels & [{:keys [axis level errors] :as attrs}]]
+  (u/kw-call df-or-srs "drop" labels attrs))
+
+(defn drop-rows
+  "A shorthand for `(drop df [0 2] {:axis 0})`
+
+  See [[drop]] docs for more info"
+  [df rows & [{:keys [level errors] :as attrs}]]
+  (drop df rows (merge attrs {:axis 0})))
+
+(defn drop-cols
+  "A shorthand for `(drop df [:A :C] {:axis 1})`
+
+  See [[drop]] docs for more info"
+  [df cols & [{:keys [level errors] :as attrs}]]
+  (drop df cols (merge attrs {:axis 1})))
+
 (defn dropna
-  "Drop missing values"
+  "Drop missing values.
+
+  **Arguments**
+
+  - `df-or-srs` -> `data-frame`, `series`
+
+  **Attrs**
+
+  - `:axis` -> int, default 0: 0 = rows, 1 = columns
+  - `:how` -> {`:any` `:all`}, default `:any`: drop when there are `:any` missing
+  values, or `:all` missing values
+  - `:thresh` -> numeric: require `:thresh` missing values to drop
+  - `:subset` -> Iterable: the subset to consider on opposite axis; e.g. if
+  you drop rows `:subset` are the columns to consider for dropping
+
+  **Examples**
+
+  ```
+  (def df
+    (data-frame {:name [:Alfred :Batman :Robin]
+                        :toy  [nil :Batmobile :Whip]
+                        :born [nil :1940-04-25 nil]})
+
+  (dropna df)
+  ;;      name        toy        born
+  ;; 1  Batman  Batmobile  1940-04-25
+  ```
+  "
   [df-or-srs & [{:keys [axis how thresh subset]
                  :as   attrs}]]
   (u/simple-kw-call df-or-srs "dropna" attrs))
 
 (defn melt
-  [df & [attrs]]
+  "Unpivot a `data-frame` from wide format to long format.
+
+  Basically reshape the `data-frame` to have one row per observation and one
+  column per variable
+
+  **Arguments**
+
+  - `df` -> `data-frame`
+
+  **Attrs**
+
+  - `:id-vars` -> Iterable: columns to use as identifiers
+  - `:value-vars` -> Iterable: columns to melt (unpivot), if not specified uses
+  all the columns not in `:id-vars`
+  - `:var-name` -> keyword, str, default `:variable`: name for the variable column
+  - `:value-name` -> keyword, str, default `:value`: name for the value column
+  - `:col-level` -> numeric, str: the level to use for melting
+
+  **Examples**
+
+  ```
+  (def df
+    (transpose
+      (data-frame [[:a :b :c] [1 3 5] [2 4 6]]
+                  {:columns [0 1 2]
+                   :index [:A :B :C]})))
+
+  (melt df)
+  ;;   variable value
+  ;; 0        A     a
+  ;; 1        A     b
+  ;; 2        A     c
+  ;; 3        B     1
+  ;; 4        B     3
+  ;; 5        B     5
+  ;; 6        C     2
+  ;; 7        C     4
+  ;; 8        C     6
+
+  (melt df {:id-vars [:A] :value-vars [:B]})
+  ;;    A variable value
+  ;; 0  a        B     1
+  ;; 1  b        B     3
+  ;; 2  c        B     5
+
+  (melt df {:id-vars [:A] :value-vars [:B :C]})
+  ;;    A variable value
+  ;; 0  a        B     1
+  ;; 1  b        B     3
+  ;; 2  c        B     5
+  ;; 3  a        C     2
+  ;; 4  b        C     4
+  ;; 5  c        C     6
+  ```
+  "
+  [df & [{:keys [id-vars value-vars var-name
+                 value-name col-level] :as attrs}]]
   (u/simple-kw-call df "melt" attrs))
 
 (defn assign
+  "Assign new columns to `df-or-srs`
+
+  **Arguments**
+
+  - `df-or-srs` -> `data-frame`, `series`
+  - `cols` -> map: either a map `{:col-name value}`, or a map `{:col-name fn}`
+
+  **Examples**
+
+  ```
+  (def df
+    (transpose
+      (data-frame [[:a :b :c] [1 3 5] [2 4 6]]
+                  {:columns [0 1 2]
+                   :index [:A :B :C]})))
+
+  (assign df {:D 3})
+  ;;    A  B  C  D
+  ;; 0  a  1  2  3
+  ;; 1  b  3  4  3
+  ;; 2  c  5  6  3
+
+  (assign df {:D [1 2 3]})
+  ;;    A  B  C  D
+  ;; 0  a  1  2  1
+  ;; 1  b  3  4  2
+  ;; 2  c  5  6  3
+
+  (assign df {:D #(-> (subset-cols % :C) (mul 2))})
+  ;;    A  B  C   D
+  ;; 0  a  1  2   4
+  ;; 1  b  3  4   8
+  ;; 2  c  5  6  12
+  ```
+  "
   [df-or-srs cols]
-  (u/simple-kw-call df-or-srs "assign"
-                    (u/keys->pyargs cols)))
+  (py/call-attr-kw df-or-srs "assign" [] cols))
+
+(defn stack
+  "Stack the prescribed level(s) from columns to index.
+
+  **Arguments**
+
+  - `df-or-srs` -> `data-frame`, `series`
+
+  **Attrs**
+
+  - `:level` -> numeric, keyword, str, default -1: level to stack
+  - `:dropna` -> bool, default true: drop rows with missing values if generated
+
+  **Examples**
+
+  ```
+  (def df 
+    (data-frame [[0 1] [2 3]]
+                {:index [:cat :dog]
+                 :columns [:weight :height]}))
+
+  (stack df)
+  ;; cat  weight    0
+  ;;      height    1
+  ;; dog  weight    2
+  ;;      height    3
+  ;; dtype: int64
+  ```
+  "
+  [df-or-srs & [{:keys [level dropna] :as attrs}]]
+  (u/simple-kw-call df-or-srs "stack" attrs))
 
 (defn unstack
-  [df-or-srs & [attrs]]
+  "Pivot a level of the (necessarily hierarchical) index labels,
+  returning a DataFrame having a new level of column labels whose inner-most
+  level consists of the pivoted index labels.
+
+  **Arguments**
+
+  - `df-or-srs` -> `data-frame`, `series`
+
+  **Attrs**
+
+  - `:level` -> numeric, keyword, str, default -1: level to unstack
+  - `:fill-value` -> any: replace missing values produced by `unstack` with this
+
+  **Examples**
+
+  ```
+  (def s
+    (stack
+      (data-frame [[1 2] [3 4]]
+                  {:index [:one :two]
+                   :columns [:a :b]})))
+
+  (unstack s)
+  ;;      a  b
+  ;; one  1  2
+  ;; two  3  4
+
+  (unstack s {:level 0})
+  ;;    one  two
+  ;; a    1    3
+  ;; b    2    4
+
+  (unstack (unstack s {:level 0}))
+  ;; one  a    1
+  ;;      b    2
+  ;; two  a    3
+  ;;      b    4
+  ;; dtype: int64
+  ```
+  "
+  [df-or-srs & [{:keys [level fill_value] :as attrs}]]
   (u/simple-kw-call df-or-srs "unstack" attrs))
 
 (defn transpose
-  "Transpose the given panthera object"
+  "Transpose the given panthera object
+
+  **Arguments**
+
+  - `df-or-srs` -> `data-frame`, `series`
+
+  **Examples**
+
+  ```
+  (def df (data-frame [[1 2 3] [4 5 6] [7 8 9]]))
+
+  (transpose df)
+  ;;    0  1  2
+  ;; 0  1  4  7
+  ;; 1  2  5  8
+  ;; 2  3  6  9
+  ```
+  "
   [df-or-srs]
-  (py/call-attr df-or-srs "transpose"))
+  (py/get-attr df-or-srs "T"))

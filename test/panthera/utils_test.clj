@@ -1,8 +1,11 @@
 (ns panthera.utils-test
   (:require
-    [clojure.test :refer :all]
+   [clojure.test :refer :all]
+   [panthera.config :refer [start-python!]]
     [libpython-clj.python :as py]
     [panthera.pandas.utils :as u]))
+
+(use-fixtures :once start-python!)
 
 (deftest pytype
   (are [t d]
@@ -44,8 +47,7 @@
     {} {}
     {:a 1} {"a" 1}
     {:a 1 :b 2} {"a" 1 "b" 2}
-    {:a-k 1} {"a_k" 1}
-    {(keyword "with spaces") 1} {"with_spaces" 1}))
+    {:a-k 1} {"a_k" 1}))
 
 (deftest memo-columns-converter
   (are [i o]
@@ -54,7 +56,9 @@
     nil nil
     "a" :a
     "col_1" :col-1
-    ["multi" "col"] [:multi :col]))
+    ["multi" "col"] [:multi :col]
+    "ALL_CAPS" :ALL-CAPS
+    "WeIrD_caPs" :WeIrD-caPs))
 
 (deftest ->clj
   (is (= (u/->clj

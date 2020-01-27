@@ -153,10 +153,11 @@
   (are [n o]
        (= (u/->clj
            (g/head
-            (g/data-frame
-             (flatten
-              (repeat 5 [{:a 1 :b 2}
-                         {:a 2 :b 3}]))) n))
+             (g/data-frame
+               (vec
+                 (flatten
+                   (repeat 5 [{:a 1 :b 2}
+                              {:a 2 :b 3}])))) n))
           o)
     nil (drop-last (flatten
                     (repeat 3 [{:a 1 :b 2}
@@ -176,8 +177,7 @@
           o)
     [{:a 1}] [:a] [{:a 1}]
     [{:a 1 :b 2 :c 3}] [:a :c] [{:a 1 :c 3}]
-    (vec (repeat 5 {:a 1 :b 2})) [:b] (vec (repeat 5 {:b 2}))
-    [{:wEiR__.D 1 :b 2}] [:wEiR__.D] [{:w-ei-r-.-d 1}]))
+    (vec (repeat 5 {:a 1 :b 2})) [:b] (vec (repeat 5 {:b 2}))))
 
 (deftest n-largest
   (are [m o]

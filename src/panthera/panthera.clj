@@ -1,6 +1,6 @@
 (ns panthera.panthera
   (:refer-clojure
-    :exclude [mod any?])
+    :exclude [mod any? drop])
   (:require
     [tech.parallel.utils :refer [export-symbols]]
     [panthera.pandas.generics]
@@ -49,11 +49,12 @@
   shape
   fill-na
   nbytes
-  ftype)
+  ftype
+  rename
+  to-excel)
 
 (export-symbols
   panthera.pandas.math
-  same?
   dot
   ne
   quantile
@@ -64,12 +65,12 @@
   add
   sum
   diff
+  same?
   ge
   cumprod
   clip
   cumsum
   eq
-  compound
   mean
   corr
   sub
@@ -126,16 +127,18 @@
   crosstab
   cut
   rolling
+  unstack
   concatenate
   remap
-  factorize
+  transpose
   qcut
   merge-ordered
   dropna
   merge-asof
+  assign
   ewm
   groupby
   melt
-  assign
-  unstack
-  transpose)
+  drop
+  drop-rows
+  drop-cols)

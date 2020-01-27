@@ -1,12 +1,17 @@
 (ns panthera.reshape-test
+  (:refer-clojure
+   :exclude [drop])
   (:require
    [clojure.test :refer :all]
    [libpython-clj.python :as py]
+   [libpython-clj.require :refer [require-python]]
    [panthera.pandas.utils :as u :reload true]
    [panthera.pandas.generics :as g]
    [panthera.pandas.reshape :as r :reload true]
    [panthera.pandas.math :as m :reload true]
    [panthera.pandas.conversion :as c]))
+
+(require-python '[numpy :as np])
 
 (defn filter-nan
   [d]
@@ -25,9 +30,9 @@
                :aggfunc :mean} [10.0 25.0])
   (is (= (u/->clj
            (r/crosstab [[1 2 2]] {:columns [[:a :b :a]] :margins true}))
-        [{:a 1 :b 0 :all 1}
-         {:a 1 :b 1 :all 2}
-         {:a 2 :b 1 :all 3}])))
+        [{:a 1 :b 0 :All 1}
+         {:a 1 :b 1 :All 2}
+         {:a 2 :b 1 :All 3}])))
 
 (deftest pivot
   (are [d o]
@@ -284,13 +289,13 @@
                        {:columns [:A :B :C]}) v d)
         o)
 
-    :sum {} (g/series [12 15 18] {:index [:A :B :C]})
+    :sum {} (g/series [12.0 15 18] {:index [:A :B :C]})
 
     [:sum :min] {} (g/data-frame
-                     {:A [12 1] :B [15 2] :C [18 3]}
+                     {:A [12.0 1] :B [15.0 2] :C [18.0 3]}
                      {:index [:sum :min]})
 
-    :sum {:axis 1} (g/series [6 15 24 0])))
+    :sum {:axis 1} (g/series [6.0 15 24 0])))
 
 (deftest remap
   (are [in mpgs ign o]
@@ -400,3 +405,88 @@
                  {:name "Robin", :toy "Whip", :born nil}] {:index [1 2]}
     {:subset [:toy]} [{:name "Batman", :toy "Batmobile", :born "1940-04-25"}
                       {:name "Robin", :toy "Whip", :born nil}] {:index [1 2]}))
+
+(deftest drop
+  (are [l d o df]
+      (m/same?
+        (r/drop
+          (g/data-frame
+            (py/$a (np/arange 12) np/reshape [3 4])
+            {:columns [:A :B :C :D]}) l d)
+        (g/data-frame o df))
+    [:B :C] {:axis 1} [{:A 0 :D 3} {:A 4 :D 7} {:A 8 :D 11}] {}
+    [0 1] {} [{"A" 8 "B" 9 "C" 10 "D" 11}] {:index [2]}))
+
+(deftest melt
+  (are [d o df]
+      (m/same?
+        (r/melt
+          (r/transpose
+            (g/data-frame [[:a :b :c] [1 3 5] [2 4 6]]
+                          {:columns [0 1 2]
+                           :index   [:A :B :C]}))
+          d)
+        (g/data-frame o df))
+
+    {} [{:variable "A", :value "a"}
+        {:variable "A", :value "b"}
+        {:variable "A", :value "c"}
+        {:variable "B", :value 1}
+        {:variable "B", :value 3}
+        {:variable "B", :value 5}
+        {:variable "C", :value 2}
+        {:variable "C", :value 4}
+        {:variable "C", :value 6}] {}
+
+    {:id-vars [:A]
+     :value-vars [:B]} [{:A "a", :variable "B", :value 1}
+                        {:A "b", :variable "B", :value 3}
+                        {:A "c", :variable "B", :value 5}] {:dtype np/object}))
+
+(deftest assign
+  (are [i o d]
+      (m/same?
+        (-> (g/data-frame [[:a 1 2] [:b 3 4] [:c 5 6]]
+                          {:columns [:A :B :C]})
+            (r/assign i))
+        (g/data-frame o d))
+
+    {:D 3} [{:A "a", :B 1, :C 2, :D 3}
+            {:A "b", :B 3, :C 4, :D 3}
+            {:A "c", :B 5, :C 6, :D 3}] {}
+
+    {:D [1 2 3]} [{:A "a", :B 1, :C 2, :D 1}
+                  {:A "b", :B 3, :C 4, :D 2}
+                  {:A "c", :B 5, :C 6, :D 3}] {}
+
+    {:D #(-> (g/subset-cols % :C)
+             (m/mul 2))} [{:A "a", :B 1, :C 2, :D 4}
+                          {:A "b", :B 3, :C 4, :D 8}
+                          {:A "c", :B 5, :C 6, :D 12}] {}))
+
+(deftest stack
+  (is (m/same?
+        (r/stack
+          (g/data-frame [[0 1] [2 3]]
+                        {:index [:cat :dog]
+                         :columns [:weight :height]}))
+        (g/series [0 1 2 3]
+                  {:index [[:cat :cat :dog :dog]
+                           [:weight :height :weight :height]]}))))
+
+(deftest unstack
+  (are [d o df]
+      (m/same?
+        (r/unstack
+          (r/stack
+            (g/data-frame [[1 2] [3 4]]
+                          {:index   [:one :two]
+                           :columns [:a :b]})) d)
+        (g/data-frame o df))
+    {} [{:a 1 :b 2} {:a 3 :b 4}] {:index [:one :two]}
+    {:level 0} [{:one 1, :two 3} {:one 2, :two 4}] {:index [:a :b]}))
+
+(deftest transpose
+  (is (m/same?
+        (r/transpose (g/data-frame [[1 2 3] [4 5 6] [7 8 9]]))
+        (g/data-frame [[1 4 7] [2 5 8] [3 6 9]]))))
