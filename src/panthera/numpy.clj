@@ -47,7 +47,7 @@
            (py/get-attr py-module (u/memo-key-converter x))))
         ([attrs]
          (if (seqable? x)
-           (let [ks    (map u/memo-key-converter x)]
+           (let [ks (map u/memo-key-converter x)]
              (py/call-attr-kw (py-get-in py-module ks) (last ks)
                               (vec (:args attrs))
                               (u/keys->pyargs (dissoc attrs :args))))

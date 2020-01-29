@@ -20,3 +20,4 @@ examples/.ipynb_checkpoints
 .classpath
 .project
 .settings
+resources/docs.md

@@ -1,13 +1,12 @@
 (ns panthera.pandas.utils
   (:require
    [libpython-clj.python :as py]
-   [camel-snake-kebab.core :as csk]
+   [libpython-clj.require :refer [require-python]]
    [camel-snake-kebab.extras :as cske]
    [clojure.core.memoize :as m]))
 
-(py/initialize!)
-
 (defonce builtins (py/import-module "builtins"))
+
 (defonce pd (py/import-module "pandas"))
 
 (defn slice
@@ -57,6 +56,17 @@
   ([obj & objs]
    (map pytype (concat (vector obj) objs))))
 
+(def pystr->cljk
+  (comp
+    keyword
+    #(clojure.string/replace % #"_" "-")
+    #(clojure.string/replace % #" " "-")))
+
+(def cljk->pystr
+  (comp
+    #(clojure.string/replace % #"-" "_")
+    name))
+
 (def memo-key-converter
   "Convert regular Clojure kebab-case keys to idiomatic
   Python snake_case strings.
@@ -66,7 +76,7 @@
   ```
   (memo-key-converter :a-key) ; \"a_key\"
   ```"
-  (m/fifo csk/->snake_case_string {} :fifo/threshold 512))
+  (m/fifo #(if (keyword? %) (cljk->pystr %) %) {} :fifo/threshold 512))
 
 (def memo-columns-converter
   "Converts Python strings to idiomatic Clojure keys.
@@ -76,12 +86,14 @@
   ```
   (memo-columns-converter \"a_name\") ; :a-name
 
-  (memo-columns-converter \"ALL_CAPS\") ; :all-caps
+  (memo-columns-converter \"ALL_CAPS\") ; :ALL-CAPS
   ```"
   (m/fifo
-    #(if (number? %)
-       %
-       (csk/->kebab-case-keyword %)) {} :fifo/threshold 512))
+    #(cond
+       (number? %) %
+       (string? %) (pystr->cljk %)
+       (nil? %) nil
+       :else (mapv pystr->cljk %)) {} :fifo/threshold 512))
 
 (defn vec->pylist
   "Converts an iterable Clojure data structure to a Python list
@@ -165,35 +177,120 @@
   [obj]
   (identical? :data-frame (pytype obj)))
 
+(defrecord DATASET [id cols data shape])
+
+(defn pr-lazy-dataset
+  [data]
+  (let [cnt (first (:shape data))]
+    (if (> cnt 4)
+      (conj (vec (take 5 (:data data))) '...)
+      (vec (:data data)))))
+
+(defmethod print-method DATASET [v ^java.io.Writer w]
+  (let [id    (:id v)
+        cols  (:cols v)
+        shape (:shape v)
+        data  (pr-lazy-dataset v)]
+    (clojure.pprint/pprint {:id id :cols cols :data data})))
+
+(defmethod print-dup DATASET [v ^java.io.Writer w]
+  (let [id    (:id v)
+        cols  (:cols v)
+        shape (:shape v)
+        data  (pr-lazy-dataset v)]
+    (clojure.pprint/pprint {:shape (vec shape) :id id :cols cols :data data})))
+
+(defmethod clojure.pprint/simple-dispatch DATASET [v]
+  (let [id    (:id v)
+        cols  (:cols v)
+        shape (:shape v)
+        data  (pr-lazy-dataset v)]
+    (clojure.pprint/pprint {:shape (vec shape) :id id :cols cols :data data})))
+
+(defmulti to-clj
+  (fn [obj] (identical? :series (py/python-type obj))))
+
+(defmethod to-clj false
+  [obj]
+  (let [cnt (py/get-attr obj "shape")]
+    (->DATASET
+      (py/get-attr obj "index")
+      (py/get-attr obj "columns")
+      (lazy-seq (py/get-attr obj "values"))
+      cnt)))
+
+(defmethod to-clj true
+  [obj]
+  (let [cnt (py/get-attr obj "shape")]
+    (->DATASET
+      (py/get-attr obj "index")
+      (or (py/get-attr obj "name") "unnamed")
+      (lazy-seq (py/get-attr obj "values"))
+      cnt)))
+
+(defmulti kwrds?
+  (fn [obj keywords?] (boolean keywords?)))
+
+(defmethod kwrds? true
+  [obj keywords?]
+  (if (series? obj)
+    (let [nm (memo-columns-converter
+               (or (py/get-attr obj "name")
+                   "unnamed"))]
+      (into [] (map #(assoc {} nm %))
+            (vec obj)))
+    (let [ks (map memo-columns-converter
+                  (py/get-attr obj "columns"))]
+      (into [] (map #(zipmap ks %))
+            (py/get-attr obj "values")))))
+
+(defmethod kwrds? false
+  [obj keywords?]
+  (if (series? obj)
+    (let [nm (or (py/get-attr obj "name")
+                 "unnamed")]
+      (into [] (map #(assoc {} nm %))
+            (vec obj)))
+    (let [ks (py/get-attr obj "columns")]
+      (into [] (map #(zipmap ks %))
+            (py/get-attr obj "values")))))
+
 (defn ->clj
   "Convert the given panthera data-frame or series to a Clojure vector of maps.
   The idea is to have a common, simple and fast access point to conversion of
   the main data structures between languages.
 
-  - series: a series gets converted to a vector of maps with only one key and
+  - `series`: a `series` gets converted to a vector of maps with only one key and
   one value. If the series has a name that becomes the key of the maps,
   otherwise `->clj` falls back to the `:unnamed` key.
-  - data-frame: a data-frame is converted to a vector of maps with names
+  - `data-frame`: a `data-frame` is converted to a vector of maps with names
   of the columns as keys and values as the corresponding row/column value.
 
-  Examples:
+  With the default method you might incur a data loss: the index doesn't get
+  converted and in case you're using a hierarchical index you get only one level
+  out of it. To keep everything in one place you have to make `full?` true, in
+  this way you get back a map with keys `{:id :cols :data}`.
+
+  **Arguments**
+
+  - `df-or-srs` -> `data-frame` or `series`
+  - `:full?` -> whether to use the full conversion, default false
+  - `:keywords?` -> wether to convert column names to keywords, default true
+
+  N.B.: `:full?` usage excludes `:keywords?`
+
+  **Examples**
 
   ```
   (->clj my-srs)
 
   (->clj my-df)
-  ```"
-  [df-or-srs]
-  (if (series? df-or-srs)
-    (let [nm (memo-columns-converter
-               (or (py/get-attr df-or-srs "name")
-                   :unnamed))]
-      (into [] (map #(assoc {} nm %))
-            (vec df-or-srs)))
-    (let [ks (map memo-columns-converter
-                  (py/get-attr df-or-srs "columns"))]
-      (into [] (map #(zipmap ks %))
-            (py/get-attr df-or-srs "values")))))
+  ```
+  "
+  [df-or-srs & {:keys [full? keywords?] :or {keywords? true}}]
+  (if full?
+    (to-clj df-or-srs)
+    (kwrds? df-or-srs keywords?)))
 
 (defn simple-kw-call
   "Helper for a cleaner access to `call-attr-kw` from `libpython-clj`"

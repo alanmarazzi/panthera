@@ -114,6 +114,4 @@
     :prod (repeat 10 0)
     :sum [0 1 3 6 10 15 21 28 36 45])
   (is (= (drop 1 (vec ((#'m/base-cumulative :diff) (g/series (range 10)))))
-         (repeat 9 1.0)))
-  (is (= ((#'m/base-cumulative :cmpnd) (g/series (range 10)))
-         3628799)))
+         (repeat 9 1.0))))

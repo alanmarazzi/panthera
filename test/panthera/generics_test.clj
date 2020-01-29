@@ -2,7 +2,7 @@
   (:require
     [clojure.test :refer :all]
     [libpython-clj.python :as py]
-    [panthera.pandas.generics :as g]
+    [panthera.pandas.generics :as g :reload true]
     [panthera.pandas.utils :as u :reload true]
     [panthera.pandas.math :as m]))
 
@@ -153,10 +153,11 @@
   (are [n o]
        (= (u/->clj
            (g/head
-            (g/data-frame
-             (flatten
-              (repeat 5 [{:a 1 :b 2}
-                         {:a 2 :b 3}]))) n))
+             (g/data-frame
+               (vec
+                 (flatten
+                   (repeat 5 [{:a 1 :b 2}
+                              {:a 2 :b 3}])))) n))
           o)
     nil (drop-last (flatten
                     (repeat 3 [{:a 1 :b 2}
@@ -176,8 +177,7 @@
           o)
     [{:a 1}] [:a] [{:a 1}]
     [{:a 1 :b 2 :c 3}] [:a :c] [{:a 1 :c 3}]
-    (repeat 5 {:a 1 :b 2}) [:b] (repeat 5 {:b 2})
-    [{:wEiR__.D 1 :b 2}] [:wEiR__.D] [{:w-ei-r-.-d 1}]))
+    (vec (repeat 5 {:a 1 :b 2})) [:b] (vec (repeat 5 {:b 2}))))
 
 (deftest n-largest
   (are [m o]
@@ -244,9 +244,7 @@
     [1 1 2] {} {1 2 2 1}
     [:a :a :b :c] {} {:a 2 :b 1 :c 1}
     (repeat 50 :a) {} {:a 50}
-    [:a :a :b :c] {:normalize true} {:a 0.5 :b 0.25 :c 0.25}
-    ;(range 20) {:bins 4} {:a 0.5 :b 0.25 :c 0.25} Intervals are not handled
-    ))
+    [:a :a :b :c] {:normalize true} {:a 0.5 :b 0.25 :c 0.25}))
 
 (deftest reset-index
   (are [i m o]
@@ -309,8 +307,8 @@
                                {:unnamed 18}
                                {:unnamed 19}]
     (g/series (range 20)) 2 [{:unnamed 18} {:unnamed 19}]
-    (g/data-frame (repeat 10 {:a 1 :b 2})) nil (repeat 5 {:a 1 :b 2})
-    (g/data-frame (repeat 10 {:a 1 :b 2})) 2 (repeat 2 {:a 1 :b 2})))
+    (g/data-frame (vec (repeat 10 {:a 1 :b 2}))) nil (repeat 5 {:a 1 :b 2})
+    (g/data-frame (vec (repeat 10 {:a 1 :b 2}))) 2 (repeat 2 {:a 1 :b 2})))
 
 (deftest fill-na
   (are [v m o]
