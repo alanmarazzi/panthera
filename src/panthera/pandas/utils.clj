@@ -5,7 +5,7 @@
    [camel-snake-kebab.extras :as cske]
    [clojure.core.memoize :as m]))
 
-(require-python '[builtins :as bt])
+(defonce builtins (py/import-module "builtins"))
 
 (defonce pd (py/import-module "pandas"))
 
@@ -32,13 +32,13 @@
   (slice 1 10 2) ; every 2 values between 1 and 10
   ```"
   ([]
-   (bt/slice nil))
+   (py/call-attr builtins "slice" nil))
   ([start]
-   (bt/slice start))
+   (py/call-attr builtins "slice" start))
   ([start stop]
-   (bt/slice start stop))
+   (py/call-attr builtins "slice" start stop))
   ([start stop incr]
-   (bt/slice start stop incr)))
+   (py/call-attr builtins "slice" start stop incr)))
 
 (defn pytype
   "Return the Python type of the given objects

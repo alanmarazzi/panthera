@@ -32,10 +32,13 @@
   series
   all?
   read-excel
+  factorize
+  to-excel
   set-index
   to-csv
   data-frame
   subset-rows
+  rename
   decreasing?
   n-cols
   head
@@ -49,9 +52,7 @@
   shape
   fill-na
   nbytes
-  ftype
-  rename
-  to-excel)
+  ftype)
 
 (export-symbols
   panthera.pandas.math
@@ -131,14 +132,15 @@
   concatenate
   remap
   transpose
+  drop-cols
   qcut
+  drop
   merge-ordered
+  drop-rows
   dropna
   merge-asof
   assign
   ewm
   groupby
-  melt
-  drop
-  drop-rows
-  drop-cols)
+  stack
+  melt)
