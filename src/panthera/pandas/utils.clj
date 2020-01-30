@@ -9,6 +9,23 @@
 
 (defonce pd (py/import-module "pandas"))
 
+(defn cache-accessor
+  [acc]
+  (let [mets (-> (py/get-attr pd :Series)
+                 (py/get-attr acc)
+                 py/att-type-map
+                 keys)
+        fltr (into [] (filter (complement #(re-find #"^_+" %))) mets)]
+    (atom (set fltr))))
+
+(defonce str-cache (cache-accessor :str))
+
+(defonce dt-cache (cache-accessor :dt))
+
+(defonce cat-cache (cache-accessor :cat))
+
+(defonce sparse-cache (cache-accessor :sparse))
+
 (defn slice
   "Returns a Python slice. This is what you'd get by doing something like
   `1:10` and it is similar to `(range 1 10)`, but works with everything
@@ -303,3 +320,18 @@
   [df kw pos & [attrs]]
   (py/call-attr-kw df kw [(vals->pylist pos)]
                    (keys->pyargs attrs)))
+
+(defn wrap-accessor
+  [acc]
+  (let [acc-nm    {:str    str-cache
+                   :dt     dt-cache
+                   :cat    cat-cache
+                   :sparse sparse-cache}
+        acc-cache (acc-nm (keyword acc))]
+    (fn [srs method & args]
+      (let [s (py/get-attr srs acc)
+            m (cljk->pystr method)]
+        (if (@acc-cache m)
+          (apply py/call-attr s m args)
+          (throw (Exception.
+                   (str "The method must be one among: " @acc-cache))))))))

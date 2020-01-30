@@ -1208,3 +1208,20 @@
 (defn to-excel
   [df-or-srs filename & [attrs]]
   (u/kw-call df-or-srs "to_excel" filename attrs))
+
+(defn ptapply
+  "Map the given `func` along an `:axis`"
+  [df-or-srs func & [attrs]]
+  (u/kw-call df-or-srs "apply" func attrs))
+
+(def string
+  (u/wrap-accessor :str))
+
+(def date
+  (u/wrap-accessor :dt))
+
+(def category
+  (u/wrap-accessor :cat))
+
+(def sparse
+  (u/wrap-accessor :sparse))
