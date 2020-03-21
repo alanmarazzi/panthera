@@ -795,8 +795,6 @@
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "sort_values" attrs))
 
-(sort-values (series [2 3 1]))
-
 (defn- preds
   "Dispatcher to avoid repetition"
   [k]
