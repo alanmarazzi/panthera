@@ -742,6 +742,44 @@
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "nunique" attrs))
 
+
+(defn- preds
+  "Dispatcher to avoid repetition"
+  [k]
+  (fn [seq-or-srs]
+    (let [ks {:unique?     #(py/get-attr % "is_unique")
+              :increasing? #(py/get-attr % "is_monotonic_increasing")
+              :decreasing? #(py/get-attr % "is_monotonic_decreasing")}]
+      (if (u/series? seq-or-srs)
+        ((ks k) seq-or-srs)
+        (recur (series seq-or-srs))))))
+
+(def unique?
+  "Return wether the values in the given collection are unique.
+
+  **Arguments**
+
+  - `seq-or-srs` -> seqable or series
+
+  **Examples**
+
+  ```
+  (unique? [1 2 3])
+  ;true
+
+  (unique? (series [1 1 2]))
+  ;false
+  ```"
+  (preds :unique?))
+
+(def increasing?
+  "Equivalent to Clojure's `<`"
+  (preds :increasing?))
+
+(def decreasing?
+  "Equivalent to Clojure's `>`"
+  (preds :decreasing?))
+
 (defn sort-values
   "Sort values in a series or along any axis in a data-frame, series or index.
 
@@ -794,45 +832,6 @@
   - For index: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Index.sort_values.html"
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "sort_values" attrs))
-
-(defn- preds
-  "Dispatcher to avoid repetition"
-  [k]
-  (fn [seq-or-srs]
-    (let [ks {:unique?     #(py/get-attr % "is_unique")
-              :increasing? #(py/get-attr % "is_monotonic_increasing")
-              :decreasing? #(py/get-attr % "is_monotonic_decreasing")}]
-      (if (u/series? seq-or-srs)
-        ((ks k) seq-or-srs)
-        (recur (series seq-or-srs))))))
-
-
-
-(def unique?
-  "Return wether the values in the given collection are unique.
-
-  **Arguments**
-
-  - `seq-or-srs` -> seqable or series
-
-  **Examples**
-
-  ```
-  (unique? [1 2 3])
-  ;true
-
-  (unique? (series [1 1 2]))
-  ;false
-  ```"
-  (preds :unique?))
-
-(def increasing?
-  "Equivalent to Clojure's `<`"
-  (preds :increasing?))
-
-(def decreasing?
-  "Equivalent to Clojure's `>`"
-  (preds :decreasing?))
 
 (defn value-counts
   "Return the count of all unique values
