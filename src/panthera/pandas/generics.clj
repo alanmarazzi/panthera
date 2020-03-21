@@ -749,18 +749,14 @@
 
   - `df-or-srs` -> data-frame, series
 
-  **Attrs**
-
-  - For data-frame: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_values.html#pandas.DataFrame.sort_values
-  - For series: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.sort_values.html
-  - For index: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Index.sort_values.html
-
   **Commonly Used Attrs**
 
   - `by`* -> keyword, str, or vector of keywords or strs, the name or list of names to sort by.
   - `:ascending` -> bool, default: true
 
   * Only for data-frames.
+
+  _For additional attributes, see Pandas documentation (links below)._
 
   **Examples**
 
@@ -789,7 +785,13 @@
   ; 2   4  3
   ; 1  20  2
 
-  ```"
+  ```
+
+  **Pandas documentation**
+
+  - For data-frame: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_values.html#pandas.DataFrame.sort_values
+  - For series: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.sort_values.html
+  - For index: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Index.sort_values.html"
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "sort_values" attrs))
 
