@@ -742,7 +742,6 @@
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "nunique" attrs))
 
-
 (defn- preds
   "Dispatcher to avoid repetition"
   [k]
