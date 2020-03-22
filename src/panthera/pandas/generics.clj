@@ -783,53 +783,48 @@
 (defn sort-values
   "Sort values in a series or along any axis in a data-frame, series or index.
 
-  **Arguments**
+  Arguments:
 
-  - `df-or-srs` -> data-frame, series
+    - `df-or-srs` -> data-frame, series
 
-  **Commonly Used Attrs**
+  Commonly Used Attrs:
 
-  - `by`* -> keyword, str, or vector of keywords or strs, the name or list of names to sort by.
-  - `:ascending` -> bool, default: true
+    - `by` -> (data-frame only) keyword, str, or vector of keywords or strs; the name or list of names to sort by.
+    - `ascending` -> bool, default: true; sort ascending vs. descending
 
-  * Only for data-frames.
+    For additional attributes, see Pandas documentation (links below).
 
-  _For additional attributes, see Pandas documentation (links below)._
+  Examples`:
 
-  **Examples**
+    (sort-values (series [2 20 4]))
+    ; 0     2
+    ; 2     4
+    ; 1    20
+    ; dtype: int64
 
-  ```
-  (sort-values (series [2 20 4]))
-  ; 0     2
-  ; 2     4
-  ; 1    20
-  ; dtype: int64
+    (sort-values (series [2 20 4]) {:ascending false})
+    ; 1    20
+    ; 2     4
+    ; 0     2
+    ; dtype: int64
 
-  (sort-values (series [2 20 4]) {:ascending false})
-  ; 1    20
-  ; 2     4
-  ; 0     2
-  ; dtype: int64
+    (data-frame [{:a 2 :b 1} {:a 20 :b 2} {:a 4 :b 3}])
+    ;     a  b
+    ; 0   2  1
+    ; 1  20  2
+    ; 2   4  3
 
-  (data-frame [{:a 2 :b 1} {:a 20 :b 2} {:a 4 :b 3}])
-  ;     a  b
-  ; 0   2  1
-  ; 1  20  2
-  ; 2   4  3
-
-  (sort-values df {:by :a})
-  ;     a  b
-  ; 0   2  1
-  ; 2   4  3
-  ; 1  20  2
-
-  ```
+    (sort-values df {:by :a})
+    ;     a  b
+    ; 0   2  1
+    ; 2   4  3
+    ; 1  20  2
 
   **Pandas documentation**
 
-  - For data-frame: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_values.html#pandas.DataFrame.sort_values
-  - For series: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.sort_values.html
-  - For index: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Index.sort_values.html"
+    - For data-frame: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_values.html#pandas.DataFrame.sort_values
+    - For series: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.sort_values.html
+    - For index: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Index.sort_values.html"
   [df-or-srs & [attrs]]
   (u/simple-kw-call df-or-srs "sort_values" attrs))
 
