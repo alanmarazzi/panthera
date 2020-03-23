@@ -237,6 +237,18 @@
     [3 3 3] true
     [1 2 3] false))
 
+(deftest sort-values
+  (are [i attrs o]
+      (= o (vec (g/sort-values i attrs)))
+    (g/series []) {} []
+    (g/series [20 1 4]) {} [1 4 20]
+    (g/series [20 1 4]) {:ascending false} [20 4 1]
+    (g/series ["foo" "bar"]) {} ["bar" "foo"]
+    (g/series [:b :c :a]) {} ["a" "b" "c"])
+  (are [i col attrs o]
+      (= o (-> i (g/sort-values attrs) (g/subset-cols :a) vec))
+    (g/data-frame [{:a 20} {:a 1} {:a 4}]) :a {:by :a} [1 4 20]))
+
 (deftest value-counts
   (are [i m o]
        (= (g/value-counts i (merge {:clj true} m)) o)
