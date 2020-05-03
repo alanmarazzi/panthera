@@ -52,7 +52,8 @@
   shape
   fill-na
   nbytes
-  ftype)
+  ftype
+  sort-values)
 
 (export-symbols
   panthera.pandas.math
